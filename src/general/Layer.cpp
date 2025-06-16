@@ -617,3 +617,84 @@ std::vector<std::byte> Layer::serializeToBytes() const {
 }
 
 
+// Private member implementation of the helper function
+bool Layer::compareOperatorMaps(const Layer& other) const {
+    // Purpose: Perform a deep comparison of the `operators` member maps.
+    // Parameters:
+    // - @param other: The Layer whose map to compare against.
+    // Return: True if maps contain the same keys pointing to equal Operator objects.
+    // Key Logic Steps:
+    // 1. Check if the map sizes are equal.
+    // 2. Iterate through this layer's map.
+    // 3. For each operator, check if the other map contains the same ID.
+    // 4. If it does, perform a deep, polymorphic comparison on the two Operator objects.
+    
+    const auto& mapA = this->operators;
+    const auto& mapB = other.operators;
+
+    if (mapA.size() != mapB.size()) {
+        return false;
+    }
+
+    for (const auto& pairA : mapA) {
+        const uint32_t& key = pairA.first;
+        const Operator* opA = pairA.second;
+
+        auto itB = mapB.find(key);
+        if (itB == mapB.end()) {
+            return false; // Key from this map not found in the other.
+        }
+        const Operator* opB = itB->second;
+
+        if (!(*opA == *opB)) { // This uses the polymorphic operator== for Operator
+            return false;
+        }
+    }
+    return true;
+}
+
+// Public virtual `equals` implementation
+bool Layer::equals(const Layer& other) const {
+    // Purpose: Compare the state of the base Layer class.
+    // Parameters:
+    // - @param other: The Layer to compare against. Assumes the non-member operator==
+    //   has already verified that the concrete types are identical.
+    // Return: True if all persistent base members are equal.
+    // Key Logic Steps:
+    // 1. Compare primitive members (`isRangeFinal`).
+    // 2. Compare the `reservedRange` objects (handling nulls).
+    // 3. Delegate the deep comparison of the `operators` map to the private helper.
+    // Note: `currentMinId` and `currentMaxId` are not checked as they are derived
+    // from the state of the `operators` map, which is checked more thoroughly.
+
+    if (this->isRangeFinal != other.isRangeFinal) {
+        return false;
+    }
+
+    if (this->reservedRange == nullptr || other.reservedRange == nullptr) {
+        if (this->reservedRange != other.reservedRange) return false;
+    } else if (*(this->reservedRange) != *(other.reservedRange)) {
+        return false;
+    }
+
+    return this->compareOperatorMaps(other);
+}
+
+// Non-member operator== implementation (The "Gatekeeper")
+bool operator==(const Layer& lhs, const Layer& rhs) {
+    // Purpose: The primary entry point for polymorphic Layer comparison.
+    // Key Logic Steps:
+    // 1. Perform the essential type check. This is its main responsibility.
+    // 2. Delegate to the virtual `equals` member function for detailed state comparison.
+    if (lhs.getLayerType() != rhs.getLayerType()) {
+        return false;
+    }
+    return lhs.equals(rhs);
+}
+
+// Non-member operator!= implementation
+bool operator!=(const Layer& lhs, const Layer& rhs) {
+    return !(lhs == rhs);
+}
+
+

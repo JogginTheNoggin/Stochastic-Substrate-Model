@@ -47,12 +47,6 @@ protected:
     uint32_t operatorId;             // Unique ID for this Operator. Read by constructor from stream.
     DynamicArray<std::unordered_set<uint32_t>> outputConnections; // Stores outgoing connections.
 
-    // For saving UPDATE state and storing parameters for updates. 
-    // TODO internal updates within system has been deferred  
-    std::optional<UpdateType> updateType;
-    std::vector<int> paramsForUpdate; // Only for integers for now
-    int numParamsForUpdate = 0;
-
 
     /**
      * @brief [Protected Deserialization Constructor] Base constructor for deserialization.
@@ -65,11 +59,17 @@ protected:
      */
     Operator(const std::byte*& current, const std::byte* end);
 
+
 private:
 
     virtual void validate(); 
 
-
+    /**
+     * @brief [Private Helper] Deep compares the connection structure of this operator with another.
+     * @param other The operator whose connections should be compared against this one's.
+     * @return bool True if the connection structures are identical in size, scope, and content.
+     */
+    bool compareConnections(const Operator& other) const;
 
 public:
     /**
@@ -268,6 +268,16 @@ public:
     static std::string typeToString(Operator::Type type);
     
 
+    /**
+     * @brief [Virtual] Compares this Operator's state members with another for equality.
+     * @param other The Operator object to compare against.
+     * @return bool True if the state members of this object are equal to the other.
+     * @details This virtual function is the "specialist worker." It should be called ONLY by the
+     * non-member `operator==` after it has verified the two objects are of the same concrete type.
+     * This base version compares `operatorId` and the connection data.
+     */
+    virtual bool equals(const Operator& other) const;
+
 
     // Prevent copying/assignment
     Operator(const Operator&) = delete;
@@ -275,3 +285,24 @@ public:
     Operator(Operator&&) = delete;
     Operator& operator=(Operator&&) = delete;
 };
+
+// --- NEW: Non-Member Equality Operator ---
+
+/**
+ * @brief [Non-Member] Polymorphically compares two Operator objects for equality.
+ * @param lhs The left-hand side Operator.
+ * @param rhs The right-hand side Operator.
+ * @return bool True if the operators are of the same type and their states are equal.
+ * @details This is the primary function to be used for comparing operators. It first
+ * checks if the dynamic types are identical using getOpType(), then delegates the
+ * actual member-wise comparison to the virtual `equals()` method.
+ */
+bool operator==(const Operator& lhs, const Operator& rhs);
+
+/**
+ * @brief [Non-Member] Polymorphically compares two Operator objects for inequality.
+ * @param lhs The left-hand side Operator.
+ * @param rhs The right-hand side Operator.
+ * @return bool True if the operators are of different types or their states are not equal.
+ */
+bool operator!=(const Operator& lhs, const Operator& rhs);

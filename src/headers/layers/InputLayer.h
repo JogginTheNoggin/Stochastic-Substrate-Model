@@ -68,4 +68,5 @@ public:
      * @param text the text to be submitted into the text Operator channel
      */
     void inputText(std::string text); 
+
 };

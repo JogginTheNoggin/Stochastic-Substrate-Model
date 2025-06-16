@@ -40,7 +40,7 @@ protected:
      */
     void deserialize(const std::byte*& data, const std::byte* dataEnd);
 
-    void addNewOperator(Operator* op); // For manual population
+    
 
     void clearOperators();
 
@@ -61,19 +61,26 @@ private:
     void updateMinMaxIds(uint32_t operatorId);
 
 
-
+    /**
+     * @brief [Private Helper] Deep compares the operator maps of this layer and another.
+     * @param other The layer whose operator map should be compared against this one's.
+     * @return bool True if the operator maps are identical in content.
+     */
+    bool compareOperatorMaps(const Layer& other) const;
     
-
-
-    
-
 
 public:
     
+    /**
+     * @brief [Public for Setup/Testing] Adds a new, fully constructed Operator to the layer.
+     * @param op A pointer to the heap-allocated Operator to be added. The Layer takes ownership.
+     * @details This method validates the operator's ID against the layer's range and checks for
+     * duplicates before adding it to the internal map. It is made public to allow for the
+     * programmatic construction of networks in test fixtures.
+     * @throws std::runtime_error if the operator's ID is invalid for this layer or is a duplicate.
+     */
+    virtual void addNewOperator(Operator* op); // For manual population
 
-
-
-    
     /**
      * @brief Deserialization constructor for Layer.
      * Consumes data from the provided byte pointers to reconstruct the layer,
@@ -186,4 +193,34 @@ public:
  	 * @note Key Logic Steps: Constructs a JSON object string. Includes key-value pairs."
      */
     std::string toJson(bool prettyPrint = false) const;
+
+
+    /**
+     * @brief [Virtual] Compares this Layer's state members with another for equality.
+     * @param other The Layer object to compare against.
+     * @return bool True if the state members of this object are equal to the other.
+     * @details This virtual function is the "specialist worker." It should be called ONLY
+     * by the non-member `operator==` after it has verified the two objects are the
+     * same concrete type. This base version compares all common Layer properties.
+     */
+    virtual bool equals(const Layer& other) const;
 };
+
+// --- NEW: Non-Member Equality Operator ---
+
+/**
+ * @brief [Non-Member] The primary, public-facing entry point for polymorphically comparing two Layers.
+ * @param lhs The left-hand side Layer.
+ * @param rhs The right-hand side Layer.
+ * @return bool True if the layers are of the same concrete type and their states are equal.
+ * @details This function acts as the "manager" or "gatekeeper." It first performs the essential
+ * type check using `getLayerType()`. If the types match, it delegates the detailed member-wise
+ * comparison to the virtual `equals()` method.
+ */
+bool operator==(const Layer& lhs, const Layer& rhs);
+
+/**
+ * @brief [Non-Member] The primary, public-facing entry point for polymorphic inequality comparison.
+ * @return bool The logical negation of `operator==`.
+ */
+bool operator!=(const Layer& lhs, const Layer& rhs);

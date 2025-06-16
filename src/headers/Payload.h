@@ -107,6 +107,31 @@ struct Payload {
         // Note: 'active' is initialized to true.
     }
 
+    
+    /**
+     * @brief Compares this Payload object with another for equality.
+     * @param rhs The right-hand side Payload object to compare against.
+     * @return bool True if all corresponding members are equal, false otherwise.
+     * @details This method performs a member-by-member comparison of the two Payload objects.
+     */
+    bool operator==(const Payload& rhs) const {
+        return this->message == rhs.message &&
+               this->currentOperatorId == rhs.currentOperatorId &&
+               this->distanceTraveled == rhs.distanceTraveled &&
+               this->active == rhs.active;
+    }
+
+    /**
+     * @brief Compares this Payload object with another for inequality.
+     * @param rhs The right-hand side Payload object to compare against.
+     * @return bool True if any corresponding members are not equal, false otherwise.
+     * @details This method is the logical negation of the equality operator (operator==).
+     */
+    bool operator!=(const Payload& rhs) const {
+        return !(*this == rhs);
+    }
+
+
 
 	// --- NEW Serialization Method ---
     /**

@@ -149,6 +149,17 @@ Operator::Type InOperator::getOpType() const {
     return InOperator::OP_TYPE;
 }
 
+bool InOperator::equals(const Operator& other) const {
+    // Purpose: Compare this InOperator to another Operator for equality.
+    // Return: True if they are functionally equivalent InOperators.
+    // Key Logic Steps:
+    // 1. Call the base class `equals` method.
+    // 2. The `accumulatedData` vector is transient operational state and is not
+    //    serialized. Therefore, it is not part of an equality check that
+    //    verifies persistent state. The base class comparison is sufficient.
+
+    return Operator::equals(other);
+}
 
 std::string InOperator::toJson(bool prettyPrint, bool encloseInBrackets) const{
     std::ostringstream oss;

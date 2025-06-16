@@ -41,7 +41,7 @@ private:
     int weight;
     int threshold;
     int accumulateData; // Specific to AddOperator for integer accumulation
-    bool pending = false; 
+    bool pending = false; // TODO this may have to do with serialization and state safe, look into what was its intended purpose
     /**
      * @brief [Private Helper] Internal threshold check and weight application for ADD logic.
      * @param currentAccumulatedData The total data accumulated for this step.
@@ -137,6 +137,15 @@ public:
     void setWeightInternal(int newWeight);
     void setThresholdInternal(int newThreshold);
 
+    /**
+     * @brief [Override] Compares this AddOperator's state with another for equality.
+     * @param other The Operator object to compare against.
+     * @return bool True if the base Operator state is equal AND AddOperator-specific
+     * members (weight, threshold) are also equal.
+     * @details First, it invokes the base class `Operator::equals`. If that succeeds,
+     * it safely casts `other` to an `AddOperator` and compares its own persistent fields.
+     */
+    bool equals(const Operator& other) const override;
 
 
     // Prevent copying/assignment

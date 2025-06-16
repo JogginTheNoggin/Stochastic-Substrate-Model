@@ -445,3 +445,27 @@ std::vector<std::byte> AddOperator::serializeToBytes() const {
 
     return finalBuffer;
 }
+
+
+bool AddOperator::equals(const Operator& other) const {
+    // Purpose: Compare this AddOperator to another Operator for equality.
+    // Parameters:
+    // - @param other: The Operator to compare against. Assumed to be of type AddOperator.
+    // Return: True if they are functionally equivalent AddOperators, false otherwise.
+    // Key Logic Steps:
+    // 1. Call the base class `equals` method to compare ID and connections.
+    // 2. If the base is equal, cast `other` to a `const AddOperator&`.
+    // 3. Compare AddOperator-specific persistent state: `weight`, `threshold`, and `accumulateData`.
+
+    if (!Operator::equals(other)) {
+        return false;
+    }
+
+    const auto& otherAddOp = static_cast<const AddOperator&>(other);
+
+    // Compare all persistent derived class members.
+    return this->weight == otherAddOp.weight &&
+           this->threshold == otherAddOp.threshold &&
+           this->accumulateData == otherAddOp.accumulateData &&
+           this->pending == otherAddOp.pending; 
+}

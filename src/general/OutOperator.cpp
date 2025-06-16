@@ -170,6 +170,23 @@ void OutOperator::randomInit(IdRange* validConnectionRange, Randomizer* rng) {
     // It fulfills the abstract base class's requirement.
 }
 
+bool OutOperator::equals(const Operator& other) const {
+    // Purpose: Compare this OutOperator to another Operator for equality.
+    // Return: True if they are functionally equivalent OutOperators.
+    // Key Logic Steps:
+    // 1. Call the base class `equals` method. If it fails, return false.
+    // 2. Cast `other` to a `const OutOperator&`.
+    // 3. Compare the internal `data` vectors, which are persisted during serialization.
+
+    if (!Operator::equals(other)) {
+        return false;
+    }
+
+    const auto& otherOutOp = static_cast<const OutOperator&>(other);
+
+    return this->data == otherOutOp.data;
+}
+
 std::string OutOperator::toJson(bool prettyPrint, bool encloseInBrackets) const{
     std::ostringstream oss;
     std::string indent = prettyPrint ? "  " : "";

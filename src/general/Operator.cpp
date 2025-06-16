@@ -373,3 +373,79 @@ std::vector<std::byte> Operator::serializeToBytes() const {
 
     return buffer;
 }
+
+
+// Private member implementation of the helper function
+bool Operator::compareConnections(const Operator& other) const {
+    // Purpose: Perform a deep comparison of the outputConnections members.
+    // Parameters:
+    // - @param other: The Operator whose connections to compare against.
+    // Return: True if connection structures are identical.
+    // Key Logic Steps:
+    // 1. Compare the count of active buckets and the max index.
+    // 2. Iterate through each possible distance.
+    // 3. For each distance, get the connection sets from both operators.
+    // 4. Handle all cases: both null, one null, or both valid (in which case the sets are compared).
+
+    const auto& connA = this->outputConnections;
+    const auto& connB = other.outputConnections;
+
+    if (connA.maxIdx() != connB.maxIdx() || connA.count() != connB.count()) {
+        return false;
+    }
+
+    if (connA.maxIdx() == -1) { // Both are empty
+        return true;
+    }
+
+    for (int i = 0; i <= connA.maxIdx(); ++i) {
+        const auto* setA = connA.get(i);
+        const auto* setB = connB.get(i);
+
+        if (setA == nullptr && setB == nullptr) {
+            continue;
+        }
+        if (setA == nullptr || setB == nullptr) {
+            return false;
+        }
+        if (*setA != *setB) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Public virtual `equals` implementation
+bool Operator::equals(const Operator& other) const {
+    // Purpose: Compare the state of the base Operator class.
+    // Parameters:
+    // - @param other: The Operator to compare against. Assumes the non-member operator== has
+    //   already verified the types are identical.
+    // Return: True if base members are equal.
+    // Key Logic Steps:
+    // 1. Compare the operatorId.
+    // 2. Delegate the deep comparison of connections to the private helper method.
+
+    if (this->operatorId != other.operatorId) {
+        return false;
+    }
+    return this->compareConnections(other);
+}
+
+// Non-member operator== implementation (The "Manager")
+bool operator==(const Operator& lhs, const Operator& rhs) {
+    // Purpose: Perform the primary polymorphic equality check.
+    // Return: True if types and values are equal.
+    // Key Logic Steps:
+    // 1. Perform the essential type check. This is the main responsibility of this function.
+    // 2. If types match, delegate to the virtual `equals` member function for the detailed comparison.
+    if (lhs.getOpType() != rhs.getOpType()) {
+        return false;
+    }
+    return lhs.equals(rhs);
+}
+
+// Non-member operator!= implementation
+bool operator!=(const Operator& lhs, const Operator& rhs) {
+    return !(lhs == rhs);
+}

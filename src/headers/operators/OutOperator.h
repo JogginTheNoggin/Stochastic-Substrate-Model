@@ -63,6 +63,14 @@ public:
     std::string toJson(bool prettyPrint = false, bool encloseInBrackets = true) const override;
     void changeParams(const std::vector<int>& params) override; // TODO may not want method to be of const type, and needs support for different data Types
 
+    /**
+     * @brief [Override] Compares this OutOperator's state with another for equality.
+     * @param other The Operator object to compare against.
+     * @return bool True if the base state is equal and the `data` vectors are identical.
+     * @details Invokes the base `Operator::equals` method first, then compares the
+     * content of the internal data buffer. 
+     */
+    bool equals(const Operator& other) const override;
 
     // --- OutOperator-Specific Methods ---
     /**
