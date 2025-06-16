@@ -1,9 +1,0 @@
-# .gitignore
-*.log
-credentials.json
-token.json
-submitToDoc.pyw
-googletest/
-build/
-.vscode/
-
