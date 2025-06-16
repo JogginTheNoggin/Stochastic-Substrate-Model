@@ -1,0 +1,12 @@
+# .gitignore
+*.log
+credentials.json
+token.json
+submitToDoc.pyw
+submitToDoc.py
+googletest/
+build/
+archived/
+.vscode/
+testing/
+test/testing/Temporary
