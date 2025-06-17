@@ -51,6 +51,7 @@ endif()
 # -----------------------------------
 # Unit Tests (AthenaTests)
 # -----------------------------------
+
 enable_testing()
 
 # Add GoogleTest

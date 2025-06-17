@@ -1,5 +1,6 @@
 # .gitignore
 *.log
+.vscode/
 README.txt
 credentials.json
 token.json
@@ -8,6 +9,5 @@ submitToDoc.py
 googletest/
 build/
 archived/
-.vscode/
 testing/
 test/testing/Temporary
