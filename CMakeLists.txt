@@ -70,7 +70,7 @@ file(GLOB_RECURSE TEST_SOURCES
 
 if(TEST_SOURCES)
     add_executable(AthenaTests ${TEST_SOURCES})
-    target_include_directories(AthenaTests PRIVATE "${SOURCE_DIR}/headers")
+    target_include_directories(AthenaTests PRIVATE "${SOURCE_DIR}") # Corrected include directory
     target_link_libraries(AthenaTests AthenaLib gtest gtest_main)
     add_test(NAME AthenaTests COMMAND AthenaTests)
 else()
