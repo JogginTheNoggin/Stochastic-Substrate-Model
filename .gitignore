@@ -1,5 +1,6 @@
 # .gitignore
 *.log
+README.txt
 credentials.json
 token.json
 submitToDoc.pyw
