@@ -55,7 +55,13 @@ endif()
 enable_testing()
 
 # Add GoogleTest
-add_subdirectory(googletest)
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG    release-1.10.0 # Or a more recent release
+)
+FetchContent_MakeAvailable(googletest)
 
 file(GLOB_RECURSE TEST_SOURCES 
     LIST_DIRECTORIES false 
