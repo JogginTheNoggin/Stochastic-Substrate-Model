@@ -10,42 +10,7 @@
 #include <iomanip>   // For std::hex
 #include <unordered_set> // For comparing target IDs
 
-// Helper function to convert various types to a byte vector (Big Endian)
-// These are simplified versions of what Serializer::write might do internally
-// For verification purposes, we need to reconstruct what Serializer writes.
-
-// Helper to write uint16_t as big endian bytes
-std::vector<std::byte> uint16ToBytes(uint16_t val) {
-    std::vector<std::byte> bytes(2);
-    bytes[0] = static_cast<std::byte>((val >> 8) & 0xFF);
-    bytes[1] = static_cast<std::byte>(val & 0xFF);
-    return bytes;
-}
-
-// Helper to write uint32_t as big endian bytes
-std::vector<std::byte> uint32ToBytes(uint32_t val) {
-    std::vector<std::byte> bytes(4);
-    bytes[0] = static_cast<std::byte>((val >> 24) & 0xFF);
-    bytes[1] = static_cast<std::byte>((val >> 16) & 0xFF);
-    bytes[2] = static_cast<std::byte>((val >> 8) & 0xFF);
-    bytes[3] = static_cast<std::byte>(val & 0xFF);
-    return bytes;
-}
-
-// Helper to write int (assuming Serializer writes it as a 4-byte signed int in BE).
-// This matches typical direct serialization of int.
-std::vector<std::byte> intToBytes(int val) {
-    std::vector<std::byte> bytes(4);
-    // Cast to uint32_t to ensure well-defined bitwise operations for negative numbers
-    // The bit pattern of val will be preserved.
-    uint32_t u_val = static_cast<uint32_t>(val);
-    bytes[0] = static_cast<std::byte>((u_val >> 24) & 0xFF);
-    bytes[1] = static_cast<std::byte>((u_val >> 16) & 0xFF);
-    bytes[2] = static_cast<std::byte>((u_val >> 8) & 0xFF);
-    bytes[3] = static_cast<std::byte>(u_val & 0xFF);
-    return bytes;
-}
-
+// Helper functions (uint16ToBytes, etc.) are removed. Serializer::write will be used directly.
 
 // Fixture for Operator serializeToBytes tests
 class OperatorSerializeTest : public ::testing::Test {
@@ -86,31 +51,26 @@ TEST_F(OperatorSerializeTest, SerializeAddOperatorNoConnections) {
     std::vector<std::byte> expectedOperatorPart;
     // Operator::serializeToBytes writes:
     // 1. Operator Type (uint16_t) - from getOpType()
-    auto typeBytes = uint16ToBytes(static_cast<uint16_t>(AddOperator::OP_TYPE)); // AddOperator::OP_TYPE is 0
-    expectedOperatorPart.insert(expectedOperatorPart.end(), typeBytes.begin(), typeBytes.end());
+    Serializer::write(expectedOperatorPart, static_cast<uint16_t>(AddOperator::OP_TYPE));
     // 2. Operator ID (uint32_t) - Serializer::write(buffer, this->operatorId)
-    auto idBytes = uint32ToBytes(operatorId);
-    expectedOperatorPart.insert(expectedOperatorPart.end(), idBytes.begin(), idBytes.end());
+    Serializer::write(expectedOperatorPart, operatorId);
     // 3. Bucket Count (uint16_t)
-    auto bucketCountBytes = uint16ToBytes(0); // No connections
-    expectedOperatorPart.insert(expectedOperatorPart.end(), bucketCountBytes.begin(), bucketCountBytes.end());
+    Serializer::write(expectedOperatorPart, static_cast<uint16_t>(0)); // No connections
 
     std::vector<std::byte> expectedAddOperatorSpecificPart;
     // AddOperator specific: weight, threshold, accumulateData (each as int)
-    auto weightBytes = intToBytes(weight);
-    expectedAddOperatorSpecificPart.insert(expectedAddOperatorSpecificPart.end(), weightBytes.begin(), weightBytes.end());
-    auto thresholdBytes = intToBytes(threshold);
-    expectedAddOperatorSpecificPart.insert(expectedAddOperatorSpecificPart.end(), thresholdBytes.begin(), thresholdBytes.end());
-    auto accDataBytes = intToBytes(accumulateData);
-    expectedAddOperatorSpecificPart.insert(expectedAddOperatorSpecificPart.end(), accDataBytes.begin(), accDataBytes.end());
+    Serializer::write(expectedAddOperatorSpecificPart, weight);
+    Serializer::write(expectedAddOperatorSpecificPart, threshold);
+    Serializer::write(expectedAddOperatorSpecificPart, accumulateData);
 
     // AddOperator::serializeToBytes combines these parts and prepends total size
     std::vector<std::byte> expectedFullDataBuffer = expectedOperatorPart;
     expectedFullDataBuffer.insert(expectedFullDataBuffer.end(), expectedAddOperatorSpecificPart.begin(), expectedAddOperatorSpecificPart.end());
 
     uint32_t totalDataSize = static_cast<uint32_t>(expectedFullDataBuffer.size());
-    std::vector<std::byte> expectedFinalBuffer = uint32ToBytes(totalDataSize);
-    expectedFinalBuffer.insert(expectedFinalBuffer.end(), expectedFullDataBuffer.begin(), expectedFullDataBuffer.end());
+    std::vector<std::byte> expectedFinalBuffer; // Create empty vector
+    Serializer::write(expectedFinalBuffer, totalDataSize); // Write size prefix using Serializer
+    expectedFinalBuffer.insert(expectedFinalBuffer.end(), expectedFullDataBuffer.begin(), expectedFullDataBuffer.end()); // Append data
 
     std::vector<std::byte> actualBytes = op->serializeToBytes();
 
@@ -127,34 +87,26 @@ TEST_F(OperatorSerializeTest, SerializeAddOperatorOneConnection) {
     int accumulateData = 0;
 
     std::vector<std::byte> expectedOperatorPart;
-    auto typeBytes = uint16ToBytes(static_cast<uint16_t>(AddOperator::OP_TYPE));
-    expectedOperatorPart.insert(expectedOperatorPart.end(), typeBytes.begin(), typeBytes.end());
-    auto idBytes = uint32ToBytes(operatorId);
-    expectedOperatorPart.insert(expectedOperatorPart.end(), idBytes.begin(), idBytes.end());
-    auto bucketCountBytes = uint16ToBytes(1); // 1 bucket
-    expectedOperatorPart.insert(expectedOperatorPart.end(), bucketCountBytes.begin(), bucketCountBytes.end());
+    Serializer::write(expectedOperatorPart, static_cast<uint16_t>(AddOperator::OP_TYPE));
+    Serializer::write(expectedOperatorPart, operatorId);
+    Serializer::write(expectedOperatorPart, static_cast<uint16_t>(1)); // 1 bucket
     // For each bucket: Distance (uint16_t), Num Connections (uint16_t), Target IDs (uint32_t each)
-    auto distBytes = uint16ToBytes(2);
-    expectedOperatorPart.insert(expectedOperatorPart.end(), distBytes.begin(), distBytes.end());
-    auto numConnBytes = uint16ToBytes(1);
-    expectedOperatorPart.insert(expectedOperatorPart.end(), numConnBytes.begin(), numConnBytes.end());
-    auto targetIdBytes = uint32ToBytes(200);
-    expectedOperatorPart.insert(expectedOperatorPart.end(), targetIdBytes.begin(), targetIdBytes.end());
+    Serializer::write(expectedOperatorPart, static_cast<uint16_t>(2)); // Distance
+    Serializer::write(expectedOperatorPart, static_cast<uint16_t>(1)); // Num Connections
+    Serializer::write(expectedOperatorPart, static_cast<uint32_t>(200)); // Target ID
 
     std::vector<std::byte> expectedAddOperatorSpecificPart;
-    auto weightBytes = intToBytes(weight);
-    expectedAddOperatorSpecificPart.insert(expectedAddOperatorSpecificPart.end(), weightBytes.begin(), weightBytes.end());
-    auto thresholdBytes = intToBytes(threshold);
-    expectedAddOperatorSpecificPart.insert(expectedAddOperatorSpecificPart.end(), thresholdBytes.begin(), thresholdBytes.end());
-    auto accDataBytes = intToBytes(accumulateData);
-    expectedAddOperatorSpecificPart.insert(expectedAddOperatorSpecificPart.end(), accDataBytes.begin(), accDataBytes.end());
+    Serializer::write(expectedAddOperatorSpecificPart, weight);
+    Serializer::write(expectedAddOperatorSpecificPart, threshold);
+    Serializer::write(expectedAddOperatorSpecificPart, accumulateData);
 
     std::vector<std::byte> expectedFullDataBuffer = expectedOperatorPart;
     expectedFullDataBuffer.insert(expectedFullDataBuffer.end(), expectedAddOperatorSpecificPart.begin(), expectedAddOperatorSpecificPart.end());
 
     uint32_t totalDataSize = static_cast<uint32_t>(expectedFullDataBuffer.size());
-    std::vector<std::byte> expectedFinalBuffer = uint32ToBytes(totalDataSize);
-    expectedFinalBuffer.insert(expectedFinalBuffer.end(), expectedFullDataBuffer.begin(), expectedFullDataBuffer.end());
+    std::vector<std::byte> expectedFinalBuffer;
+    Serializer::write(expectedFinalBuffer, totalDataSize); // Write size prefix
+    expectedFinalBuffer.insert(expectedFinalBuffer.end(), expectedFullDataBuffer.begin(), expectedFullDataBuffer.end()); // Append data
 
     std::vector<std::byte> actualBytes = op->serializeToBytes();
 
@@ -183,12 +135,22 @@ TEST_F(OperatorSerializeTest, SerializeAddOperatorMultipleConnectionsSameDistanc
     offset += 4;
     ASSERT_EQ(actualTotalSize, actualBytes.size() - 4) << "Total size prefix mismatch.";
 
+    std::vector<std::byte> tempExpectedBytes;
 
-    expectBytesEqual(actualBytes, offset, uint16ToBytes(static_cast<uint16_t>(AddOperator::OP_TYPE)), "Type"); offset += 2;
-    expectBytesEqual(actualBytes, offset, uint32ToBytes(operatorId), "ID"); offset += 4;
-    expectBytesEqual(actualBytes, offset, uint16ToBytes(1), "Bucket Count"); offset += 2; // 1 bucket
-    expectBytesEqual(actualBytes, offset, uint16ToBytes(1), "Distance"); offset += 2;
-    expectBytesEqual(actualBytes, offset, uint16ToBytes(2), "Num Connections"); offset += 2; // 2 connections
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, static_cast<uint16_t>(AddOperator::OP_TYPE));
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Type"); offset += 2;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, operatorId);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "ID"); offset += 4;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, static_cast<uint16_t>(1)); // Bucket Count
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Bucket Count"); offset += 2;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, static_cast<uint16_t>(1)); // Distance
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Distance"); offset += 2;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, static_cast<uint16_t>(2)); // Num Connections
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Num Connections"); offset += 2;
 
     uint32_t target1 = (static_cast<uint32_t>(actualBytes[offset+0]) << 24) | (static_cast<uint32_t>(actualBytes[offset+1]) << 16) | (static_cast<uint32_t>(actualBytes[offset+2]) << 8) | static_cast<uint32_t>(actualBytes[offset+3]);
     offset += 4;
@@ -198,9 +160,14 @@ TEST_F(OperatorSerializeTest, SerializeAddOperatorMultipleConnectionsSameDistanc
     std::unordered_set<uint32_t> actualTargets = {target1, target2};
     ASSERT_EQ(actualTargets, expectedTargets) << "Target ID set mismatch.";
 
-    expectBytesEqual(actualBytes, offset, intToBytes(weight), "Weight"); offset += 4;
-    expectBytesEqual(actualBytes, offset, intToBytes(threshold), "Threshold"); offset += 4;
-    expectBytesEqual(actualBytes, offset, intToBytes(accumulateData), "AccumulateData"); offset += 4;
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, weight);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Weight"); offset += 4;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, threshold);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Threshold"); offset += 4;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, accumulateData);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "AccumulateData"); offset += 4;
 
     ASSERT_EQ(offset, actualBytes.size()) << "Total length check failed, not all bytes consumed.";
 }
@@ -225,18 +192,34 @@ TEST_F(OperatorSerializeTest, SerializeAddOperatorMultipleConnectionsDifferentDi
     offset += 4;
     ASSERT_EQ(actualTotalSize, actualBytes.size() - 4) << "Total size prefix mismatch.";
 
-    expectBytesEqual(actualBytes, offset, uint16ToBytes(static_cast<uint16_t>(AddOperator::OP_TYPE)), "Type"); offset += 2;
-    expectBytesEqual(actualBytes, offset, uint32ToBytes(operatorId), "ID"); offset += 4;
-    expectBytesEqual(actualBytes, offset, uint16ToBytes(2), "Bucket Count"); offset += 2; // 2 buckets
+    std::vector<std::byte> tempExpectedBytes;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, static_cast<uint16_t>(AddOperator::OP_TYPE));
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Type"); offset += 2;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, operatorId);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "ID"); offset += 4;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, static_cast<uint16_t>(2)); // Bucket Count
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Bucket Count"); offset += 2;
 
     // Bucket 1 (distance 0)
-    expectBytesEqual(actualBytes, offset, uint16ToBytes(0), "Dist0"); offset += 2;
-    expectBytesEqual(actualBytes, offset, uint16ToBytes(1), "NumConn D0"); offset += 2;
-    expectBytesEqual(actualBytes, offset, uint32ToBytes(400), "Target D0"); offset += 4;
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, static_cast<uint16_t>(0)); // Distance
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Dist0"); offset += 2;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, static_cast<uint16_t>(1)); // Num Connections
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "NumConn D0"); offset += 2;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, static_cast<uint32_t>(400)); // Target ID
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Target D0"); offset += 4;
 
     // Bucket 2 (distance 3)
-    expectBytesEqual(actualBytes, offset, uint16ToBytes(3), "Dist3"); offset += 2;
-    expectBytesEqual(actualBytes, offset, uint16ToBytes(2), "NumConn D3"); offset += 2;
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, static_cast<uint16_t>(3)); // Distance
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Dist3"); offset += 2;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, static_cast<uint16_t>(2)); // Num Connections
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "NumConn D3"); offset += 2;
+
     uint32_t target1_d3 = (static_cast<uint32_t>(actualBytes[offset+0]) << 24) | (static_cast<uint32_t>(actualBytes[offset+1]) << 16) | (static_cast<uint32_t>(actualBytes[offset+2]) << 8) | static_cast<uint32_t>(actualBytes[offset+3]);
     offset += 4;
     uint32_t target2_d3 = (static_cast<uint32_t>(actualBytes[offset+0]) << 24) | (static_cast<uint32_t>(actualBytes[offset+1]) << 16) | (static_cast<uint32_t>(actualBytes[offset+2]) << 8) | static_cast<uint32_t>(actualBytes[offset+3]);
@@ -245,9 +228,14 @@ TEST_F(OperatorSerializeTest, SerializeAddOperatorMultipleConnectionsDifferentDi
     std::unordered_set<uint32_t> actualTargets_d3 = {target1_d3, target2_d3};
     ASSERT_EQ(actualTargets_d3, expectedTargets_d3) << "Target ID set mismatch for distance 3.";
 
-    expectBytesEqual(actualBytes, offset, intToBytes(weight), "Weight"); offset += 4;
-    expectBytesEqual(actualBytes, offset, intToBytes(threshold), "Threshold"); offset += 4;
-    expectBytesEqual(actualBytes, offset, intToBytes(accumulateData), "AccumulateData"); offset += 4;
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, weight);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Weight"); offset += 4;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, threshold);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Threshold"); offset += 4;
+
+    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, accumulateData);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "AccumulateData"); offset += 4;
 
     ASSERT_EQ(offset, actualBytes.size()) << "Total length check failed, not all bytes consumed.";
 }
