@@ -177,10 +177,10 @@ void Operator::addConnectionInternal(uint32_t targetOperatorId, int distance) {
     // TODO bucket distance is not need, only payload needs to know distance, the array index represents the distance enough
 
     if (targetsPtr == nullptr) {
-        // Bucket doesn't exist, create it
-        std::unordered_set<uint32_t>* newTargets;
-        newTargets->insert(targetOperatorId);
-        outputConnections.set(distance, newTargets); // Set new set
+        // Bucket doesn't exist, create it.
+        // CORRECTED: Allocate a new set on the heap.
+        targetsPtr = new std::unordered_set<uint32_t>();
+        outputConnections.set(distance, targetsPtr);
     } else {
         // Bucket exists, insert target (set handles duplicates)
         targetsPtr->insert(targetOperatorId);
