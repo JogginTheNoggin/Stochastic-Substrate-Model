@@ -60,7 +60,7 @@ void Serializer::write(std::vector<std::byte>& buffer, double value) {
      Serializer::appendFloatBE_Internal(buffer, value); // Call static private helper
 }
 
-// TODO remove 1 byte prefix, also check callers that use it
+// TODO maybe remove 1 byte prefix, also check callers that use it
 void Serializer::write(std::vector<std::byte>& buffer, int value) {
     constexpr size_t intSize = sizeof(int);
     if (intSize > std::numeric_limits<uint8_t>::max()) {
@@ -96,7 +96,7 @@ uint64_t Serializer::read_uint64(const std::byte*& current, const std::byte* end
     return Serializer::readUnsignedBE_Internal<uint64_t>(current, end);
 }
 
-// TODO remove 1 byte prefix, also check callers that use it
+// TODO maybe remove 1 byte prefix, also check callers that use it
 int Serializer::read_int(const std::byte*& current, const std::byte* end) {
     // Read 1-byte size prefix using the uint8_t reader
     uint8_t sizeN = Serializer::read_uint8(current, end);

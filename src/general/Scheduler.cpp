@@ -140,14 +140,26 @@ void Scheduler::scheduleMessage(int targetOperatorId, int messageData)
  * @warning This permanently deletes all Scheduler instances. Use with caution,
  * typically only during application shutdown or a full simulation reset.
  */
-void Scheduler::ResetInstances()
-{
-    std::lock_guard<std::mutex> lock(instanceMutex); // Lock for safe modification
-    // Delete all pointed-to instances
-    for (Scheduler* instance : instances) {
-        delete instance; // This will call the destructor, attempting removal again, which is safe
+void Scheduler::ResetInstances() {
+    // Purpose: Safely delete all managed Scheduler instances without causing a deadlock.
+    // Key Logic:
+    // 1. Create a temporary local vector to hold the pointers.
+    // 2. Acquire a lock on the static mutex just long enough to move the pointers
+    //    from the static vector to our local one. This leaves the static vector empty.
+    // 3. The lock is released automatically.
+    // 4. Iterate through the local vector and delete each pointer. The destructors will
+    //    be called, but since the mutex is no longer held, they will not deadlock.
+
+    std::vector<Scheduler*> instances_to_delete;
+    {
+        // Lock only to safely copy and clear the static list.
+        std::lock_guard<std::mutex> lock(instanceMutex);
+        instances.swap(instances_to_delete); // Efficiently move pointers to local vector
+    } // Mutex is released here.
+
+    // Now, delete the pointers from the local copy.
+    // The destructors can now acquire the lock without deadlocking.
+    for (Scheduler* instance : instances_to_delete) {
+        delete instance;
     }
-    // Clear the vector of pointers
-    instances.clear();
-    // Mutex is automatically unlocked here
 }

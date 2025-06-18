@@ -12,9 +12,10 @@ TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalBasic) {
     std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(10);
     ASSERT_NE(op, nullptr);
 
+    // add two
     op->addConnectionInternal(100, 2);
     op->addConnectionInternal(101, 2);
-
+    // remove one
     op->removeConnectionInternal(100, 2);
 
     const auto& connections = op->getOutputConnections();
@@ -35,8 +36,8 @@ TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalLastFromBucket) {
 
     const auto& connections = op->getOutputConnections();
     const auto* bucket = connections.get(3);
-    ASSERT_NE(bucket, nullptr);
-    EXPECT_TRUE(bucket->empty());
+    ASSERT_EQ(bucket, nullptr); // empty bucket will be deleted
+    // EXPECT_TRUE(bucket->empty());
 }
 
 TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalNonExistentTarget) {

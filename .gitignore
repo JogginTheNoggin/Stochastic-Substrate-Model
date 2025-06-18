@@ -1,6 +1,9 @@
 # .gitignore
 *.log
-.vscode/
+.vscode/*      
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 README.txt
 credentials.json
 token.json

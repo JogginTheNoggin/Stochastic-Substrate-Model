@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Athena",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/Athena.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        { "text": "-gdb-set new-console on" },
+        { "text": "-enable-pretty-printing" }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug Unit Tests",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/AthenaTests.exe",  // <-- Adjust path
+      "args": ["--gtest_filter=*"],  // You can set a specific test filter here
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/",  // or wherever your tests run from
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        { "text": "-gdb-set new-console on" },
+        { "text": "-enable-pretty-printing" }
+      ],
+      "preLaunchTask": "build"
+    }
+  ]
+}

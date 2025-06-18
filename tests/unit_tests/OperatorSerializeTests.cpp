@@ -160,14 +160,23 @@ TEST_F(OperatorSerializeTest, SerializeAddOperatorMultipleConnectionsSameDistanc
     std::unordered_set<uint32_t> actualTargets = {target1, target2};
     ASSERT_EQ(actualTargets, expectedTargets) << "Target ID set mismatch.";
 
-    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, weight);
-    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Weight"); offset += 4;
+    tempExpectedBytes.clear(); 
+    Serializer::write(tempExpectedBytes, weight);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Weight");
+    // CORRECTED: Advance by the size of the size-prefix (1) + the size of the int (4)
+    offset += (1 + sizeof(int));
 
-    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, threshold);
-    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Threshold"); offset += 4;
+    tempExpectedBytes.clear(); 
+    Serializer::write(tempExpectedBytes, threshold);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Threshold");
+    // CORRECTED: Advance by 5 bytes
+    offset += (1 + sizeof(int));
 
-    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, accumulateData);
-    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "AccumulateData"); offset += 4;
+    tempExpectedBytes.clear(); 
+    Serializer::write(tempExpectedBytes, accumulateData);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "AccumulateData");
+    // CORRECTED: Advance by 5 bytes
+    offset += (1 + sizeof(int));
 
     ASSERT_EQ(offset, actualBytes.size()) << "Total length check failed, not all bytes consumed.";
 }
@@ -228,14 +237,23 @@ TEST_F(OperatorSerializeTest, SerializeAddOperatorMultipleConnectionsDifferentDi
     std::unordered_set<uint32_t> actualTargets_d3 = {target1_d3, target2_d3};
     ASSERT_EQ(actualTargets_d3, expectedTargets_d3) << "Target ID set mismatch for distance 3.";
 
-    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, weight);
-    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Weight"); offset += 4;
+    tempExpectedBytes.clear(); 
+    Serializer::write(tempExpectedBytes, weight);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Weight");
+    // CORRECTED: Advance by the size of the size-prefix (1) + the size of the int (4)
+    offset += (1 + sizeof(int));
 
-    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, threshold);
-    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Threshold"); offset += 4;
+    tempExpectedBytes.clear(); 
+    Serializer::write(tempExpectedBytes, threshold);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "Threshold");
+    // CORRECTED: Advance by 5 bytes
+    offset += (1 + sizeof(int));
 
-    tempExpectedBytes.clear(); Serializer::write(tempExpectedBytes, accumulateData);
-    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "AccumulateData"); offset += 4;
+    tempExpectedBytes.clear(); 
+    Serializer::write(tempExpectedBytes, accumulateData);
+    expectBytesEqual(actualBytes, offset, tempExpectedBytes, "AccumulateData");
+    // CORRECTED: Advance by 5 bytes
+    offset += (1 + sizeof(int));
 
     ASSERT_EQ(offset, actualBytes.size()) << "Total length check failed, not all bytes consumed.";
 }

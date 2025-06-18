@@ -120,14 +120,14 @@ void UpdateScheduler::Submit(const UpdateEvent& event)
  * @warning This permanently deletes all UpdateScheduler instances. Use with caution,
  * typically only during application shutdown or a full simulation reset.
  */
-void UpdateScheduler::ResetInstances()
-{
-    std::lock_guard<std::mutex> lock(instanceMutex); // Lock for safe modification
-    // Delete all pointed-to instances
-    for (UpdateScheduler* instance : instances) {
-        delete instance; // This will call the destructor, attempting removal again, which is safe
+void UpdateScheduler::ResetInstances() {
+    std::vector<UpdateScheduler*> instances_to_delete;
+    {
+        std::lock_guard<std::mutex> lock(instanceMutex);
+        instances.swap(instances_to_delete);
+    } 
+
+    for (UpdateScheduler* instance : instances_to_delete) {
+        delete instance;
     }
-    // Clear the vector of pointers
-    instances.clear();
-    // Mutex is automatically unlocked here
 }

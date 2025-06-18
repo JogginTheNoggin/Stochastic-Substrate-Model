@@ -47,7 +47,7 @@ TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalNonExistentTarget) {
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(220, 1);
-    op->moveConnectionInternal(221, 1, 4);
+    op->moveConnectionInternal(221, 1, 4); // operator not existant, nothing is moved
 
     const auto& connections = op->getOutputConnections();
     const auto* bucketOld = connections.get(1);
@@ -56,8 +56,9 @@ TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalNonExistentTarget) {
     EXPECT_EQ(bucketOld->count(220), 1);
 
     const auto* bucketNew = connections.get(4);
-    ASSERT_NE(bucketNew, nullptr);
-    EXPECT_TRUE(bucketNew->empty());
+    ASSERT_EQ(bucketNew, nullptr);
+    //EXPECT_TRUE(bucketNew->empty());
+    EXPECT_EQ(connections.count(), 1);
 }
 
 
@@ -66,7 +67,7 @@ TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalFromNonExistentDistance
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(230, 2);
-    op->moveConnectionInternal(230, 7, 4);
+    op->moveConnectionInternal(230, 7, 4); // won't be created, op does not exist at 7, only 2
 
     const auto& connections = op->getOutputConnections();
     const auto* bucket2 = connections.get(2);
@@ -75,11 +76,11 @@ TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalFromNonExistentDistance
     EXPECT_EQ(bucket2->count(230), 1);
 
     const auto* bucket4 = connections.get(4);
-    ASSERT_NE(bucket4, nullptr);
-    ASSERT_EQ(bucket4->size(), 1);
-    EXPECT_EQ(bucket4->count(230), 1);
+    ASSERT_EQ(bucket4, nullptr);
+    //ASSERT_EQ(bucket4->size(), 1);
+    //EXPECT_EQ(bucket4->count(230), 1);
 
-    EXPECT_EQ(connections.count(), 2);
+    EXPECT_EQ(connections.count(), 1);
 }
 
 TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalToExistingBucket) {
@@ -110,22 +111,26 @@ TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalWithNegativeDistances) 
 
     op->addConnectionInternal(250, 3);
 
-    op->moveConnectionInternal(250, -1, 5);
+    op->moveConnectionInternal(250, -1, 5); // will not create, returns without doing anything
 
     const auto& conns1 = op->getOutputConnections();
     const auto* b3_1 = conns1.get(3);
-    ASSERT_NE(b3_1, nullptr); EXPECT_EQ(b3_1->count(250), 1);
+    ASSERT_NE(b3_1, nullptr); 
+    EXPECT_EQ(b3_1->count(250), 1);
     const auto* b5_1 = conns1.get(5);
-    ASSERT_NE(b5_1, nullptr); EXPECT_EQ(b5_1->count(250), 1);
-    EXPECT_EQ(conns1.count(), 2);
+    ASSERT_EQ(b5_1, nullptr); 
+    //EXPECT_EQ(b5_1->count(250), 1);
+    EXPECT_EQ(conns1.count(), 1); // no new bucket has been made
 
 
     std::unique_ptr<AddOperator> op2 = std::make_unique<AddOperator>(26);
-    op2->addConnectionInternal(260, 3);
-    op2->moveConnectionInternal(260, 3, -1);
+    op2->addConnectionInternal(260, 3); // add operator to bucket 3, should contain 2 now
+    op2->moveConnectionInternal(260, 3, -1); // will not move to negative distance
 
     const auto& conns2 = op2->getOutputConnections();
+    EXPECT_EQ(conns2.count(), 1); // new op (op2), 1 bucket and 1 connection
     const auto* b3_2 = conns2.get(3);
     ASSERT_NE(b3_2, nullptr);
-    EXPECT_TRUE(b3_2->empty());
+    //EXPECT_TRUE(b3_2->empty());
+    EXPECT_EQ(b3_2->size(), 1); // new op (op2) contains 1 connection at bucket 3
 }

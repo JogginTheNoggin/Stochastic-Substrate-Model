@@ -2,11 +2,15 @@
 #include "../headers/Scheduler.h"
 #include "../headers/UpdateScheduler.h"
 #include "../headers/util/DynamicArray.h"
-#include <vector>
-#include <string>
+#include <algorithm> // Required for std::sort
+#include <vector>    // Required for std::vector
+#include <utility>   // Required for std::pair
+#include <stdexcept> // Required for std::range_error, std::overflow_error
+#include <limits>    // Required for std::numeric_limits
 #include <unordered_set>
 #include <cstddef>   // For std::byte
 #include <sstream>   // For std::ostringstream
+#include <iostream>
 
 //TODO  Incorrect 
 Operator::Operator(const std::byte*& current, const std::byte* end) {
@@ -95,8 +99,15 @@ void Operator::validate(){
  * @note Does NOT require MetaController reference. Relies on Scheduler for message dispatch.
  */
 void Operator::traverse(Payload* payload) {
-    if (payload == nullptr || !payload->active || payload->distanceTraveled < 0) {
+    if (payload == nullptr) {
         return; // Don't process inactive payloads
+    }
+    else if(!payload->active || payload->distanceTraveled < 0){
+        payload->active = false; // dont process inactive or invalid distanced payloads
+        return;
+    }
+    else if(payload->currentOperatorId != this->operatorId){ 
+        return; // do not process if not owned. 
     }
 
     // Increment distance traveled for this step
@@ -125,16 +136,17 @@ void Operator::traverse(Payload* payload) {
                 // }
         }
 
-        // Move payload forward
         
-        // TODO an update request could be call just after this, making the payload useful and active but at different time, should this remain? 
-        if (payload->distanceTraveled == outputConnections.maxIdx()) { // no 
-            // no more buckets to check
-            payload->active = false;
+    }
+    // Move payload forward
+        
+    // TODO an update request could be call just after this, making the payload useful and active but at different time, should this remain? 
+    if (payload->distanceTraveled >= outputConnections.maxIdx()) { // no 
+        // no more buckets to check
+        payload->active = false;
 
-        } else {
-            payload->distanceTraveled++; // move forward
-        }
+    } else {
+        payload->distanceTraveled++; // move forward
     }
     // Else: Distance not yet reached, payload continues traveling towards currentBucketIndex.
     // TODO check that payload after processData, is able to continue, may need to be added to timeController timeStep again, for nextTimeStep
@@ -181,12 +193,12 @@ void Operator::addConnectionInternal(uint32_t targetOperatorId, int distance) {
         // CORRECTED: Allocate a new set on the heap.
         targetsPtr = new std::unordered_set<uint32_t>();
         outputConnections.set(distance, targetsPtr);
-    } else {
-        // Bucket exists, insert target (set handles duplicates)
-        targetsPtr->insert(targetOperatorId);
-            // If 'get' returned a copy (unlikely for pointer), need to 'set' modified set back
-            // outputConnections.set(distance, *targetsPtr); // If needed
-    }
+    } 
+
+    // THE BUG: This 'insert' is called on the OLD value of targetsPtr if it wasn't null.
+    // The pointer that was freshly created is not used here.
+    // If targetsPtr was NOT null, it inserts into that. If it WAS null, it inserts into a garbage pointer.
+    targetsPtr->insert(targetOperatorId);
 }
 
 
@@ -200,21 +212,25 @@ void Operator::addConnectionInternal(uint32_t targetOperatorId, int distance) {
  */
 void Operator::removeConnectionInternal(uint32_t targetOperatorId, int distance) {
 
-    if (distance < 0 || distance <= outputConnections.maxIdx()) return;
+    if (distance < 0 || distance > outputConnections.maxIdx()) return;
 
-    std::unordered_set<uint32_t>* targetsPtr = outputConnections.get(distance);
+    std::unordered_set<uint32_t>* targetsPtr = outputConnections.get(distance); // mutable
 
     if (targetsPtr != nullptr) {
         targetsPtr->erase(targetOperatorId); // Remove element using set's erase
+        // TODO update maxID ?
+        // If the set is now empty, remove it from DynamicArray
+        if (targetsPtr->empty()) {
+            outputConnections.remove(distance); 
+        } 
+        else{
+            outputConnections.set(distance, targetsPtr);
+        }
 
-        // If the set is now empty, potentially remove it from DynamicArray
-        // if (targetsPtr->empty()) {
-        //     outputConnections.remove(distance); // Assuming remove exists
-        // } else {
-        //    // If 'get' returned a copy, need to 'set' the modified set back
-        //    // outputConnections.set(distance, *targetsPtr);
-        // }
+
     }
+
+    // else don't have element
 }
 
 /**
@@ -226,11 +242,22 @@ void Operator::removeConnectionInternal(uint32_t targetOperatorId, int distance)
  * bucket and an add to the new distance bucket. Uses the existing internal methods.
  */
 void Operator::moveConnectionInternal(uint32_t targetOperatorId, int oldDistance, int newDistance) {
-    // TODO check efficiency
-    // First, remove the connection from the old distance bucket
-    removeConnectionInternal(targetOperatorId, oldDistance);
-    // Then, add the connection to the new distance bucket
-    addConnectionInternal(targetOperatorId, newDistance);
+    if(oldDistance < 0 || newDistance < 0){ // negative distances are invalid
+        return; 
+    }
+    const std::unordered_set<uint32_t>* oldTargetsPtr = outputConnections.get(oldDistance);
+
+    // Check if the bucket at the old distance exists and if the target ID is in it.
+    if (oldTargetsPtr != nullptr && oldTargetsPtr->count(targetOperatorId) > 0) {
+        // The connection exists, so we can proceed with the move.
+        
+        // First, remove the connection from the old distance bucket
+        removeConnectionInternal(targetOperatorId, oldDistance);
+        
+        // Then, add the connection to the new distance bucket
+        addConnectionInternal(targetOperatorId, newDistance);
+    }
+    // If the connection does not exist at the old distance, do nothing.
 }
 
 
@@ -248,10 +275,10 @@ std::string Operator::typeToString(Operator::Type type) {
         case Operator::Type::ADD: return "ADD";
         case Operator::Type::SUB: return "SUB";
         case Operator::Type::MUL: return "MUL";
-        case Operator::Type::LEFT: return "ADD";
-        case Operator::Type::RIGHT: return "SUB";
-        case Operator::Type::OUT: return "MUL";
-        case Operator::Type::IN: return "MUL";
+        case Operator::Type::LEFT: return "LEFT";
+        case Operator::Type::RIGHT: return "RIGHT";
+        case Operator::Type::OUT: return "OUT";
+        case Operator::Type::IN: return "IN";
         case Operator::Type::UNDEFINED: return "UNDEFINED";
         default: return "UNKNOWN";
     }
@@ -320,60 +347,85 @@ std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets) const {
 }
 
 
-
 /**
  * @brief Serializes the base Operator fields into a byte vector WITHOUT a size prefix.
  * @return std::vector<std::byte> A byte vector containing the serialized base class data.
  * @details This virtual method is intended to be called by derived class overrides. It serializes
- * the Type, ID, and connection data, which is common to all Operator types.
+ * the Type, ID, and connection data, which is common to all Operator types. The connections are serialized 
+ * in sorted order for deterministic output and repeatabilitiy.
  * @note DOES NOT PROVIDE BYTE SIZE OF SERIALIZATION
  */
 std::vector<std::byte> Operator::serializeToBytes() const {
-    std::vector<std::byte> buffer;
+    // Purpose: Serialize the base Operator fields into a byte vector without a size prefix.
+    //          This is intended to be called by the derived class's serializeToBytes method.
+    // Return: std::vector<std::byte> - A byte vector containing the serialized base class data.
+    // Key Logic Steps:
+    // 1. Serialize the operator's type and ID.
+    // 2. Collect all valid, non-empty connection buckets.
+    // 3. Sort the buckets by distance to ensure deterministic output.
+    // 4. Write the count of valid buckets.
+    // 5. Iterate through the sorted buckets, performing safety checks before writing the
+    //    distance, connection count, and sorted target IDs for each.
 
+    std::vector<std::byte> buffer;
+    
     // Serialize Operator Type (2 bytes)
     Serializer::write(buffer, static_cast<uint16_t>(this->getOpType()));
-
-    // Serialize Operator ID (n bytes, size-prefixed)
+    // Serialize Operator ID (4 bytes, direct write)
     Serializer::write(buffer, this->operatorId);
 
-    // --- Serialize Connections Efficiently ---
-    // 1. Get the exact count of active buckets directly from the DynamicArray.
-    const uint16_t bucketCount = static_cast<uint16_t>(this->outputConnections.count());
+    // --- Serialize Connections Deterministically and Safely ---
 
-    if (bucketCount > std::numeric_limits<uint16_t>::max()){
-        throw std::overflow_error("Operator " + std::to_string(operatorId) + " has too many non-empty buckets for serialization format.");
-    }
-
-    Serializer::write(buffer, bucketCount);
-
-    // 2. If there are buckets, perform a single loop to find and serialize them.
-    if (bucketCount > 0) {
-        for (int d = 0; d <= this->outputConnections.maxIdx(); ++d) {
-            const std::unordered_set<uint32_t>* targetsPtr = outputConnections.get(d);
-            if (targetsPtr != nullptr && !targetsPtr->empty()) {
-                const std::unordered_set<uint32_t>& targetIds = *targetsPtr;
-
-                if (d < 0 || d > std::numeric_limits<uint16_t>::max()) {
-                     throw std::range_error("Operator " + std::to_string(operatorId) + " has distance " + std::to_string(d) + " out of range for serialization format.");
-                }
-                Serializer::write(buffer, static_cast<uint16_t>(d)); // Distance
-
-                if (targetIds.size() > std::numeric_limits<uint16_t>::max()) {
-                     throw std::overflow_error("Operator " + std::to_string(operatorId) + ", Distance " + std::to_string(d) + " has too many connections for serialization format.");
-                }
-                Serializer::write(buffer, static_cast<uint16_t>(targetIds.size())); // Num Connections
-
-                for (int targetId : targetIds) {
-                    Serializer::write(buffer, targetId); // Target IDs
-                }
-            }
+    // 1. Collect all valid buckets into a temporary vector to be sorted.
+    std::vector<std::pair<int, const std::unordered_set<uint32_t>*>> validBuckets;
+    for (int d = 0; d <= this->outputConnections.maxIdx(); ++d) {
+        const auto* targetsPtr = outputConnections.get(d);
+        if (targetsPtr != nullptr && !targetsPtr->empty()) {
+            validBuckets.push_back({d, targetsPtr});
         }
     }
 
+    // 2. Sort the collected buckets by distance. This guarantees a deterministic byte stream.
+    std::sort(validBuckets.begin(), validBuckets.end(), 
+              [](const auto& a, const auto& b) {
+                  return a.first < b.first;
+              });
+
+    
+    if (validBuckets.size() > std::numeric_limits<uint16_t>::max()){
+        throw std::overflow_error("Operator " + std::to_string(operatorId) + " has too many non-empty buckets for serialization format.");
+    }
+    // 3. Write the final count of buckets that will be serialized.
+    Serializer::write(buffer, static_cast<uint16_t>(validBuckets.size()));
+
+    // 4. Iterate through the sorted, valid buckets and serialize their data.
+    for (const auto& pair : validBuckets) {
+        int distance = pair.first;
+        const auto& targetIds = *pair.second;
+
+        // NEW: Add range check for distance before serializing. 
+        if (distance < 0 || distance > std::numeric_limits<uint16_t>::max()) {
+            throw std::range_error("Operator " + std::to_string(operatorId) + " has distance " + std::to_string(distance) + " out of range for uint16_t serialization format.");
+        }
+        Serializer::write(buffer, static_cast<uint16_t>(distance)); // Write Distance
+
+        // NEW: Add overflow check for the number of connections in a single bucket. 
+        if (targetIds.size() > std::numeric_limits<uint16_t>::max()) {
+            throw std::overflow_error("Operator " + std::to_string(operatorId) + ", Distance " + std::to_string(distance) + " has too many connections for uint16_t serialization format.");
+        }
+        Serializer::write(buffer, static_cast<uint16_t>(targetIds.size())); // Write Num Connections
+
+        // To ensure target IDs are also deterministic, sort them before writing.
+        std::vector<uint32_t> sortedTargets(targetIds.begin(), targetIds.end());
+        std::sort(sortedTargets.begin(), sortedTargets.end());
+
+        for (uint32_t targetId : sortedTargets) {
+            Serializer::write(buffer, targetId); // Write Target IDs
+        }
+    }
+    
     return buffer;
 }
-
 
 // Private member implementation of the helper function
 bool Operator::compareConnections(const Operator& other) const {

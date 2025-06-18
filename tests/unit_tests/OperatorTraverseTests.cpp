@@ -114,10 +114,10 @@ TEST_F(OperatorTraverseTest, TraversePayloadNotYetAtDestination) {
     // In Operator::traverse:
     // 1. targetIdsPtr = outputConnections.get(payload->distanceTraveled) -> get(1) is nullptr.
     // 2. The main 'if (targetIdsPtr != nullptr && !targetIdsPtr->empty())' is false.
-    // 3. Nothing happens to payload.active or payload.distanceTraveled.
+    // 3. no change to payload.active and payload.distanceTraveled is set to 2 .
 
     EXPECT_TRUE(payload.active);
-    EXPECT_EQ(payload.distanceTraveled, 1); // Should not change
+    EXPECT_EQ(payload.distanceTraveled, 2); // should have changed
 }
 
 // Test Case 3: Payload traverses past one bucket, heading to another (or end)
@@ -201,9 +201,9 @@ TEST_F(OperatorTraverseTest, TraverseNoConnections) {
     op->traverse(&payload);
     // 1. targetIdsPtr = outputConnections.get(0) is nullptr (maxIdx is -1).
     // 2. Main 'if' is false.
-    // 3. Nothing happens to payload.
+    // 3. payload should be come inactive, 4. distanceTraveled, not incremented
 
-    EXPECT_TRUE(payload.active);
+    EXPECT_FALSE(payload.active);
     EXPECT_EQ(payload.distanceTraveled, 0);
 }
 
@@ -218,28 +218,44 @@ TEST_F(OperatorTraverseTest, TraversePayloadPastAllConnections) {
     op->traverse(&payload);
     // 1. targetIdsPtr = outputConnections.get(3) is nullptr.
     // 2. Main 'if' is false.
-    // 3. Nothing happens to payload.
+    // 3. set payload inactive, does not move forward
 
-    EXPECT_TRUE(payload.active);
+    EXPECT_FALSE(payload.active);
     EXPECT_EQ(payload.distanceTraveled, 3);
 }
 
+/* Not APPLICABLE, payload cannot be negative
 // Test Case 8: Payload with negative distanceTraveled
 TEST_F(OperatorTraverseTest, TraverseNegativePayloadDistance) {
     std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(8);
-    op->addConnectionInternal(800, 1);
-
+    op->addConnectionInternal(700, 1);
     Payload payload(50, op->getId());
-    payload.distanceTraveled = -1; // Invalid distance
+    payload.distanceTraveled = -1; // Invalid distance (Doesn't work because payload is uint32_t), because very large
     payload.active = true;
 
     op->traverse(&payload);
     // In Operator::traverse:
-    // First check: `if (payload == nullptr || !payload->active || payload->distanceTraveled < 0)`
-    // `payload->distanceTraveled < 0` is true, so it returns early.
+    // First check: `if (payload == nullptr 
+    // `payload->distanceTraveled < 0` is true, is set to inactive and returns early.
+
+    EXPECT_FALSE(payload.active); // State should be set to false
+    EXPECT_EQ(payload.distanceTraveled, -1);
+}
+*/ 
+
+TEST_F(OperatorTraverseTest, TraverseWrongOpIdPayload) {
+    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(8); 
+
+    Payload payload(50, 1); // passed opId is 1, expected is 8 
+    payload.distanceTraveled = 0; // default distance
+    payload.active = true;
+
+    op->traverse(&payload);
+    // In Operator::traverse:
+    // operator ID is not same, does not process 
 
     EXPECT_TRUE(payload.active); // State should be unchanged by early exit
-    EXPECT_EQ(payload.distanceTraveled, -1);
+    EXPECT_EQ(payload.distanceTraveled, 0);
 }
 
 // Test Case 9: Null payload

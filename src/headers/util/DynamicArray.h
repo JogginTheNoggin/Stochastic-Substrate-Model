@@ -44,7 +44,7 @@
 template <typename T>
 class DynamicArray { // TODO check DynamicArray Memory leaks
 public:
-    static constexpr std::int16_t MAX_SIZE = 100;
+    static constexpr std::int16_t MAX_SIZE = 1000;
 
     using value_type = T;
     using size_type  = std::int16_t;        // matches MAX_SIZE’s range
@@ -123,7 +123,7 @@ public:
      * @brief Sets the element at `idx` to null and decrements the count if it wasn't already null.
      * @param idx The index of the element to remove.
      */
-    void remove(size_type idx) {
+    void remove(size_type idx) { // TODO this wouldn't work if was element with multiple elements
         if (!inRange(idx))
             throw std::out_of_range{"DynamicArray index out of range"};
         
