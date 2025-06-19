@@ -781,6 +781,87 @@ TEST_F(InOperatorTest, SerializeDeserialize_MaxId) {
     EXPECT_TRUE(getAccumulatedDataFromJson(*op_deserialized).empty());
 }
 
+// --- Tests for randomInit ---
+
+TEST_F(InOperatorTest, RandomInit_IdRange_AddsConnections) {
+    ASSERT_NE(op, nullptr);
+    IdRange range(100, 200); // Target IDs will be within this range
+
+    // MockRandomizer setup:
+    // intValues for: {connectionsToAttempt, distance1, distance2, ...}
+    // uint32Values for: {targetId1, targetId2, ...}
+    MockRandomizer mockRng({2, 5, 8}, {101, 150});
+    // Attempt 2 connections:
+    // 1. Target 101, distance 5
+    // 2. Target 150, distance 8
+
+    op->randomInit(&range, &mockRng);
+
+    const auto& connections = op->getOutputConnections();
+    ASSERT_EQ(connections.size(), 2) << "Should have added 2 connections based on mock RNG.";
+
+    const auto* bucket_dist5 = connections.get(5); // Assuming get(distance) returns the set ptr
+    ASSERT_NE(bucket_dist5, nullptr) << "Distance bucket 5 should exist.";
+    EXPECT_NE(bucket_dist5->find(101), bucket_dist5->end()) << "Target ID 101 should be in distance 5 bucket.";
+
+    const auto* bucket_dist8 = connections.get(8);
+    ASSERT_NE(bucket_dist8, nullptr) << "Distance bucket 8 should exist.";
+    EXPECT_NE(bucket_dist8->find(150), bucket_dist8->end()) << "Target ID 150 should be in distance 8 bucket.";
+}
+
+TEST_F(InOperatorTest, RandomInit_IdRange_ZeroConnectionsAttempted) {
+    ASSERT_NE(op, nullptr);
+    IdRange range(100, 200);
+    MockRandomizer mockRng({0}, {}); // Attempt 0 connections
+
+    op->randomInit(&range, &mockRng);
+    EXPECT_TRUE(op->getOutputConnections().empty()) << "Should have no connections if RNG attempts 0.";
+}
+
+TEST_F(InOperatorTest, RandomInit_IdRange_MaxConnectionsIsZeroBehavior) {
+    // This test assumes InOperator::MAX_CONNECTIONS could be 0.
+    // If InOperator::MAX_CONNECTIONS is a compile-time constant > 0,
+    // then the behavior tested is when rng->getInt(0, MAX_CONNECTIONS) returns 0.
+    // This is covered by ZeroConnectionsAttempted.
+    // If MAX_CONNECTIONS itself was 0, randomInit should return early.
+    // The current InOperator.cpp:
+    // `if (MAX_CONNECTIONS <= 0) { return; }`
+    // `int connectionsToAttempt = rng->getInt(0, MAX_CONNECTIONS);`
+    // `if (connectionsToAttempt == 0) { return; }`
+    // So, if MAX_CONNECTIONS is 0 (or less), it returns immediately.
+    // This test relies on MAX_CONNECTIONS being > 0 and rng returning 0 attempts,
+    // which is already tested by RandomInit_IdRange_ZeroConnectionsAttempted.
+
+    ASSERT_NE(op, nullptr);
+    IdRange range(100, 200);
+    // If MAX_CONNECTIONS was 0, rng->getInt(0,0) would yield 0.
+    MockRandomizer mockRng({0}, {}); // Simulates 0 connections chosen
+    op->randomInit(&range, &mockRng);
+    EXPECT_TRUE(op->getOutputConnections().empty());
+}
+
+TEST_F(InOperatorTest, RandomInit_MaxOperatorId_IsEmptyImplementation) {
+    ASSERT_NE(op, nullptr);
+    // This version of randomInit is empty in InOperator.cpp
+    // So, calling it should not change any state (e.g., connections).
+    MockRandomizer emptyMockRng({}, {}); // No specific random numbers needed
+
+    op->randomInit(1000, &emptyMockRng); // Pass some maxOperatorId
+
+    EXPECT_TRUE(op->getOutputConnections().empty()) << "The empty randomInit(uint32_t, Randomizer*) should not add connections.";
+
+    // Add a connection via the other randomInit to ensure the operator is not broken
+    IdRange range(10,20);
+    MockRandomizer mockRng_add({1,1},{15});
+    op->randomInit(&range, &mockRng_add);
+    ASSERT_FALSE(op->getOutputConnections().empty()) << "Sanity check: Adding connection via other randomInit should still work.";
+
+    // Call the empty one again
+    op->randomInit(2000, &emptyMockRng);
+    ASSERT_FALSE(op->getOutputConnections().empty()) << "Calling empty randomInit should not remove existing connections.";
+    EXPECT_EQ(op->getOutputConnections().size(), 1) << "Size of connections should remain unchanged.";
+}
+
 TEST_F(InOperatorTest, ToJson_Pretty_NotEnclosed_WithData) {
     ASSERT_NE(op, nullptr);
     op->message(60);
