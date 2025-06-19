@@ -7,8 +7,7 @@
 README.txt
 credentials.json
 token.json
-submitToDoc.pyw
-submitToDoc.py
+scripts/
 googletest/
 build/
 archived/
