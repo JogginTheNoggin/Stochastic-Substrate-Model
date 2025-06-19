@@ -19,7 +19,9 @@ AddOperator::AddOperator(int id, int initialWeight, int initialThreshold)
 }
 
 // often used with randominit
-AddOperator::AddOperator(uint32_t id): Operator(id){
+AddOperator::AddOperator(uint32_t id)
+    : Operator(id), weight(0), threshold(0), accumulateData(0) {
+    // pending is default-initialized in the header
 }
 
 // --- Deserialization Constructor ---
@@ -178,15 +180,26 @@ void AddOperator::message(const float payloadData) {
     }
 
     // Clamp payloadData to a range that won't cause UB or problematic values when casting to int
-    float clampedPayload = payloadData;
-    if (payloadData > static_cast<float>(std::numeric_limits<int>::max())) {
-        clampedPayload = static_cast<float>(std::numeric_limits<int>::max());
-    } else if (payloadData < static_cast<float>(std::numeric_limits<int>::min())) {
-        clampedPayload = static_cast<float>(std::numeric_limits<int>::min());
+    // float clampedPayload = payloadData; // Old logic
+    // if (payloadData > static_cast<float>(std::numeric_limits<int>::max())) {
+    //     clampedPayload = static_cast<float>(std::numeric_limits<int>::max());
+    // } else if (payloadData < static_cast<float>(std::numeric_limits<int>::min())) {
+    //     clampedPayload = static_cast<float>(std::numeric_limits<int>::min());
+    // }
+    // int intPayloadData = static_cast<int>(std::trunc(clampedPayload)); // Old logic
+
+    // New, more robust logic:
+    if (payloadData >= static_cast<float>(std::numeric_limits<int>::max())) {
+        this->message(std::numeric_limits<int>::max());
+        return;
+    }
+    if (payloadData <= static_cast<float>(std::numeric_limits<int>::min())) {
+        this->message(std::numeric_limits<int>::min());
+        return;
     }
     
-    // Perform the cast (truncation will occur for fractional parts via std::trunc)
-    int intPayloadData = static_cast<int>(std::trunc(clampedPayload));
+    // For values strictly between (float)INT_MIN and (float)INT_MAX
+    int intPayloadData = static_cast<int>(std::trunc(payloadData)); // payloadData is used directly here as it's in range
 
     // Call the integer version of message() to handle accumulation and its specific saturation logic
     this->message(intPayloadData);
@@ -208,15 +221,26 @@ void AddOperator::message(const double payloadData) {
     }
 
     // Clamp payloadData to a range that won't cause UB or problematic values when casting to int
-    double clampedPayload = payloadData;
-    if (payloadData > static_cast<double>(std::numeric_limits<int>::max())) {
-        clampedPayload = static_cast<double>(std::numeric_limits<int>::max());
-    } else if (payloadData < static_cast<double>(std::numeric_limits<int>::min())) {
-        clampedPayload = static_cast<double>(std::numeric_limits<int>::min());
+    // double clampedPayload = payloadData; // Old logic
+    // if (payloadData > static_cast<double>(std::numeric_limits<int>::max())) {
+    //     clampedPayload = static_cast<double>(std::numeric_limits<int>::max());
+    // } else if (payloadData < static_cast<double>(std::numeric_limits<int>::min())) {
+    //     clampedPayload = static_cast<double>(std::numeric_limits<int>::min());
+    // }
+    // int intPayloadData = static_cast<int>(std::trunc(clampedPayload)); // Old logic
+
+    // New, more robust logic:
+    if (payloadData >= static_cast<double>(std::numeric_limits<int>::max())) {
+        this->message(std::numeric_limits<int>::max());
+        return;
+    }
+    if (payloadData <= static_cast<double>(std::numeric_limits<int>::min())) {
+        this->message(std::numeric_limits<int>::min());
+        return;
     }
     
-    // Perform the cast (truncation will occur for fractional parts via std::trunc)
-    int intPayloadData = static_cast<int>(std::trunc(clampedPayload));
+    // For values strictly between (double)INT_MIN and (double)INT_MAX
+    int intPayloadData = static_cast<int>(std::trunc(payloadData)); // payloadData is used directly here
 
     // Call the integer version of message() to handle accumulation and its specific saturation logic
     this->message(intPayloadData);
