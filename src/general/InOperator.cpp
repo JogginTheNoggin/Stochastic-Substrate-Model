@@ -43,9 +43,8 @@ void InOperator::randomInit(IdRange* idRange, Randomizer* rng){
         // Ensure distance is non-negative (should be by uniform_int_distribution if MAX_DISTANCE >= 0)
         if (distance < 0) distance = 0;
 
-        // TODO bulk update, at end instead of having request for each new connection. But does that mean we would have to loop through each connection again?
-        // necessary becase in future data source may not be in memory but in a database. Therefore must remain in sync. 
-        this->requestUpdate(UpdateType::ADD_CONNECTION, {static_cast<int>(targetId), distance}); // TODO current cast uint32_t to int for compatibility qith UpdateEvent struct
+        addConnectionInternal(targetId, distance); // add the connection, no update call
+        
     }
 
 }
