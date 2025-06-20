@@ -581,7 +581,7 @@ TEST_F(OutOperatorJsonTests, ToJsonPrettyPrintMatchesGoldenFile) {
 
 TEST_F(OutOperatorJsonTests, ToJsonEncloseInBracketsOption) {
     OutOperator op(12);
-    op.message(50);
+    op.message(100);
 
     std::string json_enclosed_str = op.toJson(false, true);
     std::string json_not_enclosed_str = op.toJson(false, false);
@@ -599,7 +599,7 @@ TEST_F(OutOperatorJsonTests, ToJsonEncloseInBracketsOption) {
     ASSERT_NE(json_enclosed_str.find("\"outputDistanceBuckets\":[]"), std::string::npos);
     std::vector<int> enclosed_data = JsonTestHelpers::getJsonArrayIntValue(json_enclosed_str, "data");
     ASSERT_EQ(enclosed_data.size(), 1);
-    ASSERT_EQ(enclosed_data[0], 50);
+    ASSERT_EQ(enclosed_data[0], 100);
 
     std::string temp_valid_json_from_fragment = "{" + json_not_enclosed_str + "}";
     ASSERT_EQ(JsonTestHelpers::getJsonIntValue(temp_valid_json_from_fragment, "operatorId"), 12);
@@ -607,7 +607,7 @@ TEST_F(OutOperatorJsonTests, ToJsonEncloseInBracketsOption) {
     ASSERT_NE(temp_valid_json_from_fragment.find("\"outputDistanceBuckets\":[]"), std::string::npos);
     std::vector<int> fragment_data = JsonTestHelpers::getJsonArrayIntValue(temp_valid_json_from_fragment, "data");
     ASSERT_EQ(fragment_data.size(), 1);
-    ASSERT_EQ(fragment_data[0], 50);
+    ASSERT_EQ(fragment_data[0], 100);
 }
 
 // --- Tests for Serialization ---

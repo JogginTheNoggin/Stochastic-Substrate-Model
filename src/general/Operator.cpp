@@ -294,7 +294,8 @@ std::string Operator::typeToString(Operator::Type type) {
  */
 std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets) const {
     std::ostringstream oss;
-    std::string base_indent = prettyPrint && encloseInBrackets ? "  " : "";
+    // CORRECTED: Indentation should only depend on the prettyPrint flag.
+    std::string base_indent = prettyPrint ? "  " : "";
     std::string deeper_indent = prettyPrint ? base_indent + "  " : "";
     std::string deepest_indent = prettyPrint ? deeper_indent + "  " : "";
     std::string newline = prettyPrint ? "\n" : "";
@@ -307,7 +308,10 @@ std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets) const {
     // Add base properties
     oss << base_indent << "\"opType\":" << space << "\"" << Operator::typeToString(this->getOpType()) << "\"," << newline;
     oss << base_indent << "\"operatorId\":" << space << this->operatorId << "," << newline;
-    oss << base_indent << "\"outputDistanceBuckets\":" << space << "[" << newline;
+    oss << base_indent << "\"outputDistanceBuckets\":" << space << "[" ;
+    if( outputConnections.count() > 0){
+        oss << newline; // add new line for array bracket
+    }
 
     bool firstBucket = true;
     if (outputConnections.maxIdx() >= 0) {
@@ -337,7 +341,11 @@ std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets) const {
         }
     }
 
-    oss << newline << base_indent << "]";
+    // CORRECTED: Only add a newline before the closing bracket if buckets were actually printed.
+    if (!firstBucket) {
+        oss << newline << base_indent;
+    }
+    oss << "]"; // Closing bracket for outputDistanceBuckets
 
     if (encloseInBrackets) {
         oss << newline << "}";
