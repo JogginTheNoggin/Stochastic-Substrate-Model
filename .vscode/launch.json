@@ -13,25 +13,159 @@
       "externalConsole": true,
       "MIMode": "gdb",
       "setupCommands": [
-        { "text": "-gdb-set new-console on" },
-        { "text": "-enable-pretty-printing" }
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
       ],
       "preLaunchTask": "build"
     },
     {
-      "name": "Debug Unit Tests",
+      "name": "Debug OperatorTests_AddOperator.exe",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/AthenaTests.exe",  // <-- Adjust path
-      "args": ["--gtest_filter=*"],  // You can set a specific test filter here
+      "program": "${workspaceFolder}/build/AthenaTests/OperatorTests_AddOperator.exe",
+      "args": [],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/build/",  // or wherever your tests run from
+      "cwd": "${workspaceFolder}/build/AthenaTests",
       "environment": [],
       "externalConsole": true,
       "MIMode": "gdb",
       "setupCommands": [
-        { "text": "-gdb-set new-console on" },
-        { "text": "-enable-pretty-printing" }
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug OperatorTests_InOperator.exe",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/AthenaTests/OperatorTests_InOperator.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/AthenaTests",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug OperatorTests_Operator.exe",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/AthenaTests/OperatorTests_Operator.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/AthenaTests",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug OperatorTests_OutOperator.exe",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/AthenaTests/OperatorTests_OutOperator.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/AthenaTests",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug UtilTests_IdRange.exe",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/AthenaTests/UtilTests_IdRange.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/AthenaTests",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug UtilTests_Payload.exe",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/AthenaTests/UtilTests_Payload.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/AthenaTests",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug UtilTests_Serializer.exe",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/AthenaTests/UtilTests_Serializer.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/AthenaTests",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
       ],
       "preLaunchTask": "build"
     }

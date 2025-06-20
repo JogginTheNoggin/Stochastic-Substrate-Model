@@ -43,7 +43,18 @@
                 "isDefault": true
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Generate Unit Test Debug Launches",
+            "type": "shell",
+            "command": "python",
+            "args": ["${workspaceFolder}\\scripts\\generate_vscode_debug_launches.py"],
+            "group": "build",
+            "problemMatcher": [],
+            "presentation": {
+            "reveal": "always"
         }
+}
 
     ]
 }

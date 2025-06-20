@@ -7,7 +7,8 @@
 README.txt
 credentials.json
 token.json
-scripts/
+scripts/*
+!scripts/generate_vscode_debug_launches.py
 googletest/
 /build/*
 !/build/golden_files/

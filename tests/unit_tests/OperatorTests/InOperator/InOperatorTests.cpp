@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
+#include "helpers/JsonTestHelpers.h" // For getJsonArrayIntValue
 #include "headers/operators/InOperator.h"
 #include "headers/operators/Operator.h" // For Operator::Type
 #include "headers/Payload.h"
 #include "headers/Scheduler.h"        // For potential Scheduler interactions (though likely mocked or inferred)
 #include "headers/util/Serializer.h"  // For Serializer::read_uint32 etc. for serialization tests
 #include "headers/util/Randomizer.h"  // For randomInit tests
-#include "helpers/JsonTestHelpers.h" // For getJsonArrayIntValue
 #include "headers/operators/AddOperator.h" // For comparison test
 #include <memory>                     // For std::unique_ptr
 #include <vector>                     // For std::vector
