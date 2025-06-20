@@ -97,9 +97,7 @@ void AddOperator::randomInit(uint32_t maxOperatorId, Randomizer* rng) {
         // Ensure distance is non-negative (should be by uniform_int_distribution if MAX_DISTANCE >= 0)
         if (distance < 0) distance = 0;
 
-        // TODO bulk update, at end instead of having request for each new connection. But does that mean we would have to loop through each connection again?
-        // necessary becase in future data source may not be in memory but in a database. Therefore must remain in sync. 
-        this->requestUpdate(UpdateType::ADD_CONNECTION, {static_cast<int>(targetId), distance}); // TODO current cast uint32_t to int for compatibility qith UpdateEvent struct
+        addConnectionInternal(targetId, distance);
   
     }
 }
@@ -129,9 +127,7 @@ void AddOperator::randomInit(IdRange* idRange, Randomizer* rng){
         // Ensure distance is non-negative (should be by uniform_int_distribution if MAX_DISTANCE >= 0)
         if (distance < 0) distance = 0;
 
-        // TODO bulk update, at end instead of having request for each new connection. But does that mean we would have to loop through each connection again?
-        // necessary becase in future data source may not be in memory but in a database. Therefore must remain in sync. 
-        this->requestUpdate(UpdateType::ADD_CONNECTION, {static_cast<int>(targetId), distance}); // TODO current cast uint32_t to int for compatibility qith UpdateEvent struct
+        addConnectionInternal(targetId, distance);
     }
 
 }
@@ -199,7 +195,7 @@ void AddOperator::message(const float payloadData) {
     }
     
     // For values strictly between (float)INT_MIN and (float)INT_MAX
-    int intPayloadData = static_cast<int>(std::trunc(payloadData)); // payloadData is used directly here as it's in range
+    int intPayloadData = static_cast<int>(std::round(payloadData)); // payloadData is used directly here as it's in range
 
     // Call the integer version of message() to handle accumulation and its specific saturation logic
     this->message(intPayloadData);
@@ -240,7 +236,7 @@ void AddOperator::message(const double payloadData) {
     }
     
     // For values strictly between (double)INT_MIN and (double)INT_MAX
-    int intPayloadData = static_cast<int>(std::trunc(payloadData)); // payloadData is used directly here
+    int intPayloadData = static_cast<int>(std::round(payloadData)); // payloadData is used directly here
 
     // Call the integer version of message() to handle accumulation and its specific saturation logic
     this->message(intPayloadData);

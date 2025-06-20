@@ -54,6 +54,11 @@ double Randomizer::getDouble(double min, double max) {
     return dist(pseudoRandomEngine);
 }
 
+// TODO temporary, does nothing
+float Randomizer::getFloat(float min, float max) {
+    return 0.0;
+}
+
 // Implementation for getSecureRandomUint32() would go here if you add it.
 // If using libsodium, you'd include its header and call its functions.
 // For example (conceptual, requires libsodium linked):

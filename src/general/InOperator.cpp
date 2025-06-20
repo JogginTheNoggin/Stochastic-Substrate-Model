@@ -92,7 +92,9 @@ void InOperator::changeParams(const std::vector<int>& params) {
 }
 
 void InOperator::message(const int payloadData){
-    if (payloadData < 0) { // we don't handle negative
+    if (payloadData < 0) { // we don't do negative numbers
+        accumulatedData.push_back(0); // submit as zero input, low
+        // TODO consider is zero acceptable, what about audio, can't audio values be negative
         return; 
     }
 
@@ -100,41 +102,76 @@ void InOperator::message(const int payloadData){
 }
 
 
+/**
+ * @brief Handles incoming float data by rounding, clamping, and adding it to the accumulator.
+ * @param payloadData The float data from the arriving payload.
+ * @details This method standardizes float inputs to integers. It ignores non-numeric
+ * values (NaN, Infinity). Out-of-range values are clamped to INT_MAX/INT_MIN,
+ * and valid values are rounded to the nearest integer before being added to the internal vector.
+ */
 void InOperator::message(const float payloadData) {
-    if (payloadData < 0.0f) {
-        return; // Ignore negative values
+    // Purpose: Handle float messages by safely rounding, clamping, and adding to the vector.
+    // Parameters: @param payloadData The float data to process.
+    // Return: Void.
+    // Key Logic: Ignores NaN/Inf. Checks if the float value is outside the representable
+    //            range of an int. If so, clamps the value to INT_MAX/MIN.
+    //            Otherwise, rounds the float and casts it to an int. The result is added to the vector.
+
+    if (std::isnan(payloadData) || std::isinf(payloadData)) {
+        return;
     }
 
-    // Safe rounding: round first, then check limits
-    float roundedFloat = std::round(payloadData);
+    int intPayloadData;
+    // Perform rounding using double to preserve precision for comparison
+    double rounded_payload_as_double = std::round(static_cast<double>(payloadData));
 
-    // Now check if it's within int range
-    if (roundedFloat > static_cast<float>(std::numeric_limits<int>::max()) ||
-        roundedFloat < static_cast<float>(std::numeric_limits<int>::min())) {
-        return; // Overflow or underflow would occur
+    if (rounded_payload_as_double >= static_cast<double>(std::numeric_limits<int>::max())) {
+        intPayloadData = std::numeric_limits<int>::max();
+    } else if (rounded_payload_as_double <= static_cast<double>(std::numeric_limits<int>::min())) {
+        intPayloadData = std::numeric_limits<int>::min();
+    } else {
+        // It's safe to cast to int now as it's within range
+        intPayloadData = static_cast<int>(rounded_payload_as_double);
     }
 
-    int rounded = static_cast<int>(roundedFloat);
-    accumulatedData.push_back(rounded);
+    this->accumulatedData.push_back(intPayloadData);
 }
 
 
+/**
+ * @brief Handles incoming double data by rounding, clamping, and adding it to the accumulator.
+ * @param payloadData The double data from the arriving payload.
+ * @details This method standardizes double inputs to integers. It ignores non-numeric
+ * values (NaN, Infinity). Out-of-range values are clamped to INT_MAX/INT_MIN,
+ * and valid values are rounded to the nearest integer before being added to the internal vector.
+ */
 void InOperator::message(const double payloadData) {
-    if (payloadData < 0.0) {
+    // Purpose: Handle double messages by safely rounding, clamping, and adding to the vector.
+    // Parameters: @param payloadData The double data to process.
+    // Return: Void.
+    // Key Logic: Ignores NaN/Inf. Checks if the double value is outside the representable
+    //            range of an int. If so, clamps the value to INT_MAX/MIN.
+    //            Otherwise, rounds the double and casts it to an int. The result is added to the vector.
+
+    if (std::isnan(payloadData) || std::isinf(payloadData)) {
         return;
     }
 
-    double roundedDouble = std::round(payloadData);
+    int intPayloadData;
+    // Rounding is already done using double type for payloadData
+    double rounded_payload_double = std::round(payloadData);
 
-    if (roundedDouble > static_cast<double>(std::numeric_limits<int>::max()) ||
-        roundedDouble < static_cast<double>(std::numeric_limits<int>::min())) {
-        return;
+    if (rounded_payload_double >= static_cast<double>(std::numeric_limits<int>::max())) {
+        intPayloadData = std::numeric_limits<int>::max();
+    } else if (rounded_payload_double <= static_cast<double>(std::numeric_limits<int>::min())) {
+        intPayloadData = std::numeric_limits<int>::min();
+    } else {
+        // It's safe to cast to int now as it's within range
+        intPayloadData = static_cast<int>(rounded_payload_double);
     }
 
-    int rounded = static_cast<int>(roundedDouble);
-    accumulatedData.push_back(rounded);
+    this->accumulatedData.push_back(intPayloadData);
 }
-
 
 // TODO consider adding implementation to super class and simply modifying the op_type in subclass
 /**

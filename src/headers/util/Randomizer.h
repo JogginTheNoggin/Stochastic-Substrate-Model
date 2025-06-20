@@ -33,7 +33,7 @@ public:
      * @param max The maximum value of the range.
      * @return A random integer within [min, max].
      */
-    int getInt(int min, int max);
+    virtual int getInt(int min, int max);
 
     /**
      * @brief Generates a random double within a specified range [min, max) (inclusive of min, exclusive of max).
@@ -42,12 +42,14 @@ public:
      * @param max The maximum value of the range.
      * @return A random double within [min, max).
      */
-    double getDouble(double min, double max);
+    virtual double getDouble(double min, double max);
 
     // If you still want to explore a more "cryptographically strong" option later,
     // you could add methods here. For now, focusing on PRNG for simulation.
     // For example:
     // uint32_t getSecureRandomUint32(); // Might use std::random_device directly or wrap a CSPRNG library
+
+    virtual float getFloat(float min, float max);
 
 private:
     std::mt19937 pseudoRandomEngine; // Standard Mersenne Twister engine

@@ -276,7 +276,7 @@ public:
      * non-member `operator==` after it has verified the two objects are of the same concrete type.
      * This base version compares `operatorId` and the connection data.
      */
-    virtual bool equals(const Operator& other) const;
+    virtual bool equals(const Operator& other) const = 0;
 
 
     // Prevent copying/assignment

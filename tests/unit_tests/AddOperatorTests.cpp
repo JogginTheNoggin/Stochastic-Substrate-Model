@@ -245,11 +245,11 @@ TEST_F(AddOperatorTest, MessageInt_UnderflowDuringNegativeAccumulation) {
 
 TEST_F(AddOperatorTest, MessageFloat_ValidPositiveAndNegative) {
     op->message(10.7f);
-    EXPECT_EQ(getAccumulateDataConfiguredOp(), 10); // Truncation
+    EXPECT_EQ(getAccumulateDataConfiguredOp(), 11); // rounds up
     op->message(20.2f);
-    EXPECT_EQ(getAccumulateDataConfiguredOp(), 30);
+    EXPECT_EQ(getAccumulateDataConfiguredOp(), 31); // 11 + 20.2 round down
     op->message(-5.9f);
-    EXPECT_EQ(getAccumulateDataConfiguredOp(), 25); // 30 - 5
+    EXPECT_EQ(getAccumulateDataConfiguredOp(), 25); // 31 - 6
 }
 
 TEST_F(AddOperatorTest, MessageFloat_SaturationMax_TemporarilyTestingIntMaxDirectly) { // Renamed
@@ -288,11 +288,11 @@ TEST_F(AddOperatorTest, MessageFloat_Infinity) {
 
 TEST_F(AddOperatorTest, MessageDouble_ValidPositiveAndNegative) {
     op->message(15.99);
-    EXPECT_EQ(getAccumulateDataConfiguredOp(), 15); // Truncation
+    EXPECT_EQ(getAccumulateDataConfiguredOp(), 16); // Rounds up
     op->message(25.01);
-    EXPECT_EQ(getAccumulateDataConfiguredOp(), 40); // 15 + 25
+    EXPECT_EQ(getAccumulateDataConfiguredOp(), 41); // 16 + 25
     op->message(-3.5);
-    EXPECT_EQ(getAccumulateDataConfiguredOp(), 37); // 40 - 3
+    EXPECT_EQ(getAccumulateDataConfiguredOp(), 37); // 41 - 4
 }
 
 TEST_F(AddOperatorTest, MessageDouble_SaturationMax) {
