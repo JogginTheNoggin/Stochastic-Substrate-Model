@@ -211,7 +211,7 @@ TEST_F(OutOperatorTest, EmptyOperatorToJsonCheck) {
 
     ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_str, "operatorId"), 1);
     ASSERT_NE(json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(json_str.find("\"outputConnections\":[]"), std::string::npos);
+    ASSERT_NE(json_str.find("\"outputDistanceBuckets\":[]"), std::string::npos);
 
     std::vector<int> data_vec = JsonTestHelpers::getJsonArrayIntValue(json_str, "data");
     ASSERT_TRUE(data_vec.empty());
@@ -540,7 +540,7 @@ TEST_F(OutOperatorJsonTests, ToJsonSchemaAndContentEmptyData) {
 
     ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_str, "operatorId"), 123);
     ASSERT_NE(json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(json_str.find("\"outputConnections\":[]"), std::string::npos);
+    ASSERT_NE(json_str.find("\"outputDistanceBuckets\":[]"), std::string::npos);
 
     std::vector<int> data_vec = JsonTestHelpers::getJsonArrayIntValue(json_str, "data");
     ASSERT_TRUE(data_vec.empty());
@@ -555,7 +555,7 @@ TEST_F(OutOperatorJsonTests, ToJsonSchemaAndContentWithData) {
 
     ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_str, "operatorId"), 456);
     ASSERT_NE(json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(json_str.find("\"outputConnections\":[]"), std::string::npos);
+    ASSERT_NE(json_str.find("\"outputDistanceBuckets\":[]"), std::string::npos);
 
     std::vector<int> data_vec = JsonTestHelpers::getJsonArrayIntValue(json_str, "data");
     ASSERT_EQ(data_vec.size(), 3);
@@ -564,29 +564,19 @@ TEST_F(OutOperatorJsonTests, ToJsonSchemaAndContentWithData) {
     ASSERT_EQ(data_vec[2], -5);
 }
 
-TEST_F(OutOperatorJsonTests, ToJsonPrettyPrintOption) {
+TEST_F(OutOperatorJsonTests, ToJsonPrettyPrintMatchesGoldenFile) {
+    // ARRANGE
     OutOperator op(789);
     op.message(100);
 
-    std::string json_pretty_str = op.toJson(true, true);
-    std::string json_compact_str = op.toJson(false, true);
+    // Read the expected output from the golden file.
+    std::string goldenOutput = JsonTestHelpers::ReadGoldenFile("out_operator_pretty.json");
 
-    ASSERT_NE(json_pretty_str.find('\n'), std::string::npos);
-    ASSERT_NE(json_pretty_str.find("  "), std::string::npos);
+    // ACT
+    std::string actualOutput = op.toJson(true, true);
 
-    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_pretty_str, "operatorId"), 789);
-    ASSERT_NE(json_pretty_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(json_pretty_str.find("\"outputConnections\":[]"), std::string::npos);
-    std::vector<int> pretty_data = JsonTestHelpers::getJsonArrayIntValue(json_pretty_str, "data");
-    ASSERT_EQ(pretty_data.size(), 1);
-    ASSERT_EQ(pretty_data[0], 100);
-
-    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_compact_str, "operatorId"), 789);
-    ASSERT_NE(json_compact_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(json_compact_str.find("\"outputConnections\":[]"), std::string::npos);
-    std::vector<int> compact_data = JsonTestHelpers::getJsonArrayIntValue(json_compact_str, "data");
-    ASSERT_EQ(compact_data.size(), 1);
-    ASSERT_EQ(compact_data[0], 100);
+    // ASSERT: Perform a single, strict comparison.
+    EXPECT_EQ(actualOutput, goldenOutput);
 }
 
 TEST_F(OutOperatorJsonTests, ToJsonEncloseInBracketsOption) {
@@ -606,7 +596,7 @@ TEST_F(OutOperatorJsonTests, ToJsonEncloseInBracketsOption) {
 
     ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_enclosed_str, "operatorId"), 12);
     ASSERT_NE(json_enclosed_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(json_enclosed_str.find("\"outputConnections\":[]"), std::string::npos);
+    ASSERT_NE(json_enclosed_str.find("\"outputDistanceBuckets\":[]"), std::string::npos);
     std::vector<int> enclosed_data = JsonTestHelpers::getJsonArrayIntValue(json_enclosed_str, "data");
     ASSERT_EQ(enclosed_data.size(), 1);
     ASSERT_EQ(enclosed_data[0], 50);
@@ -614,7 +604,7 @@ TEST_F(OutOperatorJsonTests, ToJsonEncloseInBracketsOption) {
     std::string temp_valid_json_from_fragment = "{" + json_not_enclosed_str + "}";
     ASSERT_EQ(JsonTestHelpers::getJsonIntValue(temp_valid_json_from_fragment, "operatorId"), 12);
     ASSERT_NE(temp_valid_json_from_fragment.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(temp_valid_json_from_fragment.find("\"outputConnections\":[]"), std::string::npos);
+    ASSERT_NE(temp_valid_json_from_fragment.find("\"outputDistanceBuckets\":[]"), std::string::npos);
     std::vector<int> fragment_data = JsonTestHelpers::getJsonArrayIntValue(temp_valid_json_from_fragment, "data");
     ASSERT_EQ(fragment_data.size(), 1);
     ASSERT_EQ(fragment_data[0], 50);
@@ -628,20 +618,25 @@ TEST_F(OutOperatorSerializationTests, SerializeDeserializeEmptyData) {
 
     std::vector<std::byte> bytes = op1.serializeToBytes();
 
-    ASSERT_GE(bytes.size(), 4u);
-    const std::byte* current_for_prefix_check = bytes.data();
-    const std::byte* end_for_prefix_check = bytes.data() + bytes.size();
-    uint32_t deserialized_size_prefix = Serializer::read_uint32(current_for_prefix_check, end_for_prefix_check);
-    ASSERT_EQ(deserialized_size_prefix, bytes.size() - 4);
-
-    const std::byte* payload_start = bytes.data() + 4;
+    const std::byte* current_ptr = bytes.data();
     const std::byte* stream_end = bytes.data() + bytes.size();
+    
+    // Step 1: Read the total size prefix (advances pointer by 4)
+    uint32_t total_data_size = Serializer::read_uint32(current_ptr, stream_end);
+    ASSERT_EQ(total_data_size, bytes.size() - 4);
 
-    const std::byte* current_for_deserialization = payload_start;
-    OutOperator op2(current_for_deserialization, stream_end);
+    // Step 2 (CRITICAL FIX): Read the opType from the stream (advances pointer by 2)
+    Operator::Type op_type_from_stream = static_cast<Operator::Type>(Serializer::read_uint16(current_ptr, stream_end));
+    ASSERT_EQ(op_type_from_stream, Operator::Type::OUT);
+
+    // 'current_ptr' now correctly points to the start of the operatorId.
+    const std::byte* operator_data_block_end = bytes.data() + 4 + total_data_size;
+    
+    // Step 3: Call the constructor with the correctly positioned pointer.
+    OutOperator op2(current_ptr, operator_data_block_end);
 
     ASSERT_TRUE(op1 == op2);
-    ASSERT_EQ(current_for_deserialization, stream_end) << "Not all bytes consumed during deserialization.";
+    ASSERT_EQ(current_ptr, operator_data_block_end) << "Not all bytes consumed during deserialization.";
 }
 
 TEST_F(OutOperatorSerializationTests, SerializeDeserializeWithData) {
@@ -653,43 +648,65 @@ TEST_F(OutOperatorSerializationTests, SerializeDeserializeWithData) {
     std::vector<std::byte> bytes = op1.serializeToBytes();
 
     ASSERT_GE(bytes.size(), 4u);
-    const std::byte* current_for_prefix_check = bytes.data();
-    const std::byte* end_for_prefix_check = bytes.data() + bytes.size();
-    uint32_t deserialized_size_prefix = Serializer::read_uint32(current_for_prefix_check, end_for_prefix_check);
-    ASSERT_EQ(deserialized_size_prefix, bytes.size() - 4);
-
-    const std::byte* payload_start = bytes.data() + 4;
+    const std::byte* current_ptr = bytes.data();
     const std::byte* stream_end = bytes.data() + bytes.size();
 
-    const std::byte* current_for_deserialization = payload_start;
-    OutOperator op2(current_for_deserialization, stream_end);
+    // Step 1: Read the total size prefix (advances pointer by 4)
+    uint32_t total_data_size = Serializer::read_uint32(current_ptr, stream_end);
+    ASSERT_EQ(total_data_size, bytes.size() - 4);
+
+    // Step 2 (CRITICAL FIX): Read the opType from the stream (advances pointer by 2)
+    Operator::Type op_type_from_stream = static_cast<Operator::Type>(Serializer::read_uint16(current_ptr, stream_end));
+    ASSERT_EQ(op_type_from_stream, Operator::Type::OUT);
+
+    // 'current_ptr' now correctly points to the start of the operatorId.
+    const std::byte* operator_data_block_end = bytes.data() + 4 + total_data_size;
+    
+    // Step 3: Call the constructor with the correctly positioned pointer.
+    OutOperator op2(current_ptr, operator_data_block_end);
 
     ASSERT_TRUE(op1 == op2);
-    ASSERT_EQ(current_for_deserialization, stream_end) << "Not all bytes consumed.";
+    ASSERT_EQ(current_ptr, operator_data_block_end) << "Not all bytes consumed during deserialization.";
 }
 
 TEST_F(OutOperatorSerializationTests, SerializeDeserializeMaxMinIntData) {
+    // ARRANGE: Create an operator with data at the limits of the 'int' type.
     OutOperator op1(789);
     op1.message(std::numeric_limits<int>::max());
     op1.message(std::numeric_limits<int>::min());
     op1.message(0);
 
+    // ACT: Serialize the operator to a byte vector.
     std::vector<std::byte> bytes = op1.serializeToBytes();
 
+    // --- Start of Corrected Deserialization Logic ---
+
     ASSERT_GE(bytes.size(), 4u);
-    const std::byte* current_for_prefix_check = bytes.data();
-    const std::byte* end_for_prefix_check = bytes.data() + bytes.size();
-    uint32_t deserialized_size_prefix = Serializer::read_uint32(current_for_prefix_check, end_for_prefix_check);
-    ASSERT_EQ(deserialized_size_prefix, bytes.size() - 4);
+    const std::byte* current_ptr = bytes.data();
+    const std::byte* stream_end = current_ptr + bytes.size();
 
-    const std::byte* payload_start = bytes.data() + 4;
-    const std::byte* stream_end = bytes.data() + bytes.size();
+    // 1. Simulate a controller reading the 4-byte total size prefix.
+    uint32_t total_data_size = Serializer::read_uint32(current_ptr, stream_end);
+    ASSERT_EQ(total_data_size, bytes.size() - 4);
 
-    const std::byte* current_for_deserialization = payload_start;
-    OutOperator op2(current_for_deserialization, stream_end);
+    // 2. CRITICAL FIX: Simulate the controller reading the 2-byte Operator::Type
+    //    to know which constructor to call. This advances the pointer correctly.
+    Operator::Type op_type_from_stream = static_cast<Operator::Type>(Serializer::read_uint16(current_ptr, stream_end));
+    ASSERT_EQ(op_type_from_stream, Operator::Type::OUT);
 
+    // The 'current_ptr' now correctly points to the start of the Operator ID field.
+    const std::byte* operator_data_block_end = bytes.data() + 4 + total_data_size;
+
+    // 3. Call the deserialization constructor with the correctly positioned pointer.
+    OutOperator op2(current_ptr, operator_data_block_end);
+
+    // --- End of Corrected Deserialization Logic ---
+
+
+    // ASSERT: The original and deserialized objects are identical.
     ASSERT_TRUE(op1 == op2);
-    ASSERT_EQ(current_for_deserialization, stream_end) << "Not all bytes consumed.";
+    // Assert that all bytes in the data block were consumed by the constructor.
+    ASSERT_EQ(current_ptr, operator_data_block_end) << "Not all bytes were consumed during deserialization.";
 }
 
 // --- Tests for Constructor (ID) ---
@@ -711,7 +728,7 @@ TEST_F(OutOperatorConstructorTests, DefaultConstructorInitializesCorrectly) {
     std::vector<int> data_array = JsonTestHelpers::getJsonArrayIntValue(json_str, "data");
     ASSERT_TRUE(data_array.empty());
 
-    ASSERT_NE(json_str.find("\"outputConnections\":[]"), std::string::npos);
+    ASSERT_NE(json_str.find("\"outputDistanceBuckets\":[]"), std::string::npos);
 }
 
 // --- Tests for randomInit ---
@@ -731,7 +748,7 @@ TEST_F(OutOperatorRandomInitTests, RandomInitMaxIdDoesNotAddConnections) {
 
     ASSERT_EQ(JsonTestHelpers::getJsonIntValue(final_json_str, "operatorId"), static_cast<int>(initial_id));
     ASSERT_NE(final_json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(final_json_str.find("\"outputConnections\":[]"), std::string::npos) << "outputConnections should be empty after randomInit(maxId). JSON: " << final_json_str;
+    ASSERT_NE(final_json_str.find("\"outputDistanceBuckets\":[]"), std::string::npos) << "outputDistanceBuckets should be empty after randomInit(maxId). JSON: " << final_json_str;
 
     std::vector<int> final_data_array = JsonTestHelpers::getJsonArrayIntValue(final_json_str, "data");
     ASSERT_EQ(initial_data_array, final_data_array) << "Data array should not change.";
@@ -753,7 +770,7 @@ TEST_F(OutOperatorRandomInitTests, RandomInitIdRangeDoesNotAddConnections) {
 
     ASSERT_EQ(JsonTestHelpers::getJsonIntValue(final_json_str, "operatorId"), static_cast<int>(initial_id));
     ASSERT_NE(final_json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(final_json_str.find("\"outputConnections\":[]"), std::string::npos) << "outputConnections should be empty after randomInit(IdRange). JSON: " << final_json_str;
+    ASSERT_NE(final_json_str.find("\"outputDistanceBuckets\":[]"), std::string::npos) << "outputDistanceBuckets should be empty after randomInit(IdRange). JSON: " << final_json_str;
 
     std::vector<int> final_data_array = JsonTestHelpers::getJsonArrayIntValue(final_json_str, "data");
     ASSERT_EQ(initial_data_array, final_data_array) << "Data array should not change.";

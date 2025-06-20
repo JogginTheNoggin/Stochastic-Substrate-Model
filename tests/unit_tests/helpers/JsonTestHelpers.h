@@ -5,6 +5,7 @@
 #include <stdexcept> // For std::runtime_error
 #include <algorithm> // For std::remove_if for whitespace stripping
 #include <sstream>   // Required for std::stringstream
+#include <fstream>
 #include <cctype>    // Required for isdigit
 
 namespace JsonTestHelpers {
@@ -116,5 +117,19 @@ static int getJsonIntValue(const std::string& json, const std::string& key) {
     }
 }
 
+
+// Helper function to read a file into a string (can be put in TestHelpers.h)
+/**
+ *  @note Place files in the build/golden_files or where the test exe is located
+ */  
+static inline std::string ReadGoldenFile(const std::string& path) {
+    std::ifstream file("golden_files/" + path);
+    if (!file) {
+        throw std::runtime_error("Failed to open golden file: " + path);
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
 
 } // namespace JsonTestHelpers

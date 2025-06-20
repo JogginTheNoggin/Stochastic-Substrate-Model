@@ -215,7 +215,19 @@ bool OutOperator::equals(const Operator& other) const {
     return this->data == otherOutOp.data;
 }
 
-std::string OutOperator::toJson(bool prettyPrint, bool encloseInBrackets) const{
+// In general/OutOperator.cpp
+
+std::string OutOperator::toJson(bool prettyPrint, bool encloseInBrackets) const {
+    // Purpose: Generates a JSON string representation of the OutOperator's state.
+    // Parameters:
+    // - @param prettyPrint: If true, format the JSON for human readability.
+    // - @param encloseInBrackets: If true, wrap the entire output in curly braces.
+    // Return: A string containing the Operator's state formatted as JSON.
+    // Key Logic Steps:
+    // 1. Call the base Operator::toJson to get common properties.
+    // 2. Append a comma separator.
+    // 3. Append this class's specific "data" array, handling pretty-printing for its contents.
+
     std::ostringstream oss;
     std::string indent = prettyPrint ? "  " : "";
     std::string newline = prettyPrint ? "\n" : "";
@@ -225,23 +237,31 @@ std::string OutOperator::toJson(bool prettyPrint, bool encloseInBrackets) const{
         oss << "{" << newline;
     }
 
-    // Get base class JSON content
+    // 1. Get the base class JSON content first (without enclosing brackets).
     oss << Operator::toJson(prettyPrint, false);
     
-    // Add comma to separate base content from derived content
+    // 2. Add a comma to separate base content from derived content.
     oss << "," << newline;
-
-    // Add derived class properties
+    
+    // 3. Add OutOperator-specific properties.
     oss << indent << "\"data\":" << space << "[";
-    bool first = true;
-    for(const auto& val : data) {
-        if (!first) {
-            oss << "," << space;
+
+    if (!data.empty()) {
+        if (prettyPrint) {
+            oss << newline;
+            std::string deeper_indent = indent + "  ";
+            for (size_t i = 0; i < data.size(); ++i) {
+                oss << deeper_indent << data[i] << (i == data.size() - 1 ? "" : ",") << newline;
+            }
+            oss << indent;
+        } else { // Compact version
+            for (size_t i = 0; i < data.size(); ++i) {
+                oss << data[i] << (i == data.size() - 1 ? "" : ",");
+            }
         }
-        oss << val;
-        first = false;
     }
-    oss << "]";
+
+    oss << "]"; // Closing bracket for the data array.
 
     if (encloseInBrackets) {
         oss << newline << "}";

@@ -9,7 +9,9 @@ credentials.json
 token.json
 scripts/
 googletest/
-build/
+/build/*
+!/build/golden_files/
+!/build/golden_files/**
 archived/
 testing/
 test/testing/Temporary
