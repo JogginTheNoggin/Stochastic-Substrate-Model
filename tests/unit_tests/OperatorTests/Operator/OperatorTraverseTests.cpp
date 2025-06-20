@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "headers/operators/AddOperator.h"
+#include "helpers/TestOperator.h" // Changed
 #include "headers/operators/Operator.h"
 #include "headers/Payload.h"
 #include "headers/Scheduler.h"
@@ -78,7 +78,7 @@ TEST_F(OperatorTraverseTest, TraversePayloadReachesFinalDestination) {
         GTEST_SKIP() << "Scheduler not available, skipping test that relies on it.";
         return;
     }
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(1);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(1); // Changed
     op->addConnectionInternal(100, 2); // Target 100, distance 2
 
     Payload payload(50, op->getId()); // Message 50, source opId 1
@@ -103,7 +103,7 @@ TEST_F(OperatorTraverseTest, TraversePayloadReachesFinalDestination) {
 
 // Test Case 2: Payload distanceTraveled has not yet reached any connection bucket
 TEST_F(OperatorTraverseTest, TraversePayloadNotYetAtDestination) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(2);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(2); // Changed
     op->addConnectionInternal(200, 3); // Target 200, distance 3
 
     Payload payload(50, op->getId());
@@ -126,7 +126,7 @@ TEST_F(OperatorTraverseTest, TraversePayloadReachesIntermediateBucket) {
         GTEST_SKIP() << "Scheduler not available, skipping test that relies on it.";
         return;
     }
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(3);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(3); // Changed
     op->addConnectionInternal(300, 1); // Bucket 1
     op->addConnectionInternal(301, 3); // Bucket 2 (maxIdx = 3)
 
@@ -149,7 +149,7 @@ TEST_F(OperatorTraverseTest, TraversePayloadReachesIntermediateBucket) {
 
 // Test Case 4: Inactive payload
 TEST_F(OperatorTraverseTest, TraverseInactivePayload) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(4);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(4); // Changed
     op->addConnectionInternal(400, 1);
 
     Payload payload(50, op->getId());
@@ -174,7 +174,7 @@ TEST_F(OperatorTraverseTest, TraversePayloadReachesSingleMaxDestination) {
         GTEST_SKIP() << "Scheduler not available, skipping test that relies on it.";
         return;
     }
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(5);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(5); // Changed
     op->addConnectionInternal(500, 0); // Connection at distance 0, maxIdx = 0
 
     Payload payload(50, op->getId());
@@ -192,7 +192,7 @@ TEST_F(OperatorTraverseTest, TraversePayloadReachesSingleMaxDestination) {
 
 // Test Case 6: No connections on operator
 TEST_F(OperatorTraverseTest, TraverseNoConnections) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(6);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(6); // Changed
     // No connections added
 
     Payload payload(50, op->getId());
@@ -209,7 +209,7 @@ TEST_F(OperatorTraverseTest, TraverseNoConnections) {
 
 // Test Case 7: Payload distanceTraveled is past all connections
 TEST_F(OperatorTraverseTest, TraversePayloadPastAllConnections) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(7);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(7); // Changed
     op->addConnectionInternal(700, 2); // Connection at distance 2 (maxIdx = 2)
 
     Payload payload(50, op->getId());
@@ -224,29 +224,25 @@ TEST_F(OperatorTraverseTest, TraversePayloadPastAllConnections) {
     EXPECT_EQ(payload.distanceTraveled, 3);
 }
 
-/* Not APPLICABLE, payload cannot be negative
+/* // Kept commented as per reasoning: Payload::distanceTraveled is uint16_t.
 // Test Case 8: Payload with negative distanceTraveled
 TEST_F(OperatorTraverseTest, TraverseNegativePayloadDistance) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(8);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(8);
     op->addConnectionInternal(700, 1);
-    Payload payload(50, op->getId());
-    payload.distanceTraveled = -1; // Invalid distance (Doesn't work because payload is uint32_t), because very large
-    payload.active = true;
+    Payload payload_neg_dist(50, op->getId(), -1, true); // Initialize with -1 distance. distanceTraveled becomes 65535.
 
-    op->traverse(&payload);
-    // In Operator::traverse:
-    // First check: `if (payload == nullptr 
-    // `payload->distanceTraveled < 0` is true, is set to inactive and returns early.
-
-    EXPECT_FALSE(payload.active); // State should be set to false
-    EXPECT_EQ(payload.distanceTraveled, -1);
+    op->traverse(&payload_neg_dist);
+    // Expected: payload becomes inactive because 65535 is past maxIdx.
+    // The "<0" branch in Operator::traverse is not hit.
+    EXPECT_FALSE(payload_neg_dist.active);
+    EXPECT_EQ(payload_neg_dist.distanceTraveled, static_cast<uint16_t>(-1)); // distance is 65535
 }
-*/ 
+*/
 
 TEST_F(OperatorTraverseTest, TraverseWrongOpIdPayload) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(8); 
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(8); // Changed
 
-    Payload payload(50, 1); // passed opId is 1, expected is 8 
+    Payload payload(50, 1); // passed opId is 1, expected is 8
     payload.distanceTraveled = 0; // default distance
     payload.active = true;
 
@@ -260,7 +256,7 @@ TEST_F(OperatorTraverseTest, TraverseWrongOpIdPayload) {
 
 // Test Case 9: Null payload
 TEST_F(OperatorTraverseTest, TraverseNullPayload) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(9);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(9); // Changed
     op->addConnectionInternal(900, 1);
     // Operator::traverse has `if (payload == nullptr ...)` check
     // We expect it to not crash and do nothing.
