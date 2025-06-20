@@ -9,6 +9,7 @@ credentials.json
 token.json
 scripts/*
 !scripts/generate_vscode_debug_launches.py
+!scripts/generate_structure_doc.py
 googletest/
 /build/*
 !/build/golden_files/

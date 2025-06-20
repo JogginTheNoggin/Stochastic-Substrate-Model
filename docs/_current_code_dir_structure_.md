@@ -1,0 +1,90 @@
+# Current Code Directory Structure
+
+## `src/`
+- general/
+  - AddOperator.cpp
+  - InOperator.cpp
+  - InputLayer.cpp
+  - InternalLayer.cpp
+  - Layer.cpp
+  - MetaController.cpp
+  - Operator.cpp
+  - OutOperator.cpp
+  - OutputLayer.cpp
+  - Randomizer.cpp
+  - Scheduler.cpp
+  - Serializer.cpp
+  - Simulator.cpp
+  - TimeController.cpp
+  - UpdateController.cpp
+  - UpdateScheduler.cpp
+- headers/
+  - NodeType.h
+  - Payload.h
+  - Scheduler.h
+  - Simulator.h
+  - UpdateEvent.h
+  - UpdateScheduler.h
+  - all_controllers.h
+  - controllers/
+    - MetaController.h
+    - TimeController.h
+    - UpdateController.h
+  - layers/
+    - InputLayer.h
+    - InternalLayer.h
+    - Layer.h
+    - LayerType.h
+    - OutputLayer.h
+  - operators/
+    - AddOperator.h
+    - InOperator.h
+    - Operator.h
+    - OutOperator.h
+    - all_operators.h
+  - util/
+    - DynamicArray.h
+    - IdRange.h
+    - Randomizer.h
+    - Serializer.h
+- main.cpp
+- unit_tests/
+
+## `tests/`
+- Testing/
+  - Temporary/
+    - CTestCostData.txt
+    - LastTest.log
+- unit_tests/
+  - OperatorTests/
+    - AddOperator/
+      - AddOperatorTests.cpp
+    - InOperator/
+      - InOperatorTests.cpp
+    - Operator/
+      - OperatorAddConnectionTests.cpp
+      - OperatorConstructionTests.cpp
+      - OperatorEqualityTests.cpp
+      - OperatorJsonTests.cpp
+      - OperatorMiscTests.cpp
+      - OperatorMoveConnectionTests.cpp
+      - OperatorRemoveConnectionTests.cpp
+      - OperatorSerializeTests.cpp
+      - OperatorTraverseTests.cpp
+    - OutOperator/
+      - OutOperatorTests.cpp
+  - Testing/
+    - Temporary/
+      - CTestCostData.txt
+      - LastTest.log
+  - UtilTests/
+    - IdRange/
+      - IdRangeTests.cpp
+    - Payload/
+      - PayloadTests.cpp
+    - Serializer/
+      - SerializerTests.cpp
+  - helpers/
+    - JsonTestHelpers.h
+    - MockRandomizer.h
+    - TestOperator.h
