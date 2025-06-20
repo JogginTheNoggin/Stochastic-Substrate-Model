@@ -294,10 +294,10 @@ std::string Operator::typeToString(Operator::Type type) {
  */
 std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets) const {
     std::ostringstream oss;
-    // CORRECTED: Indentation should only depend on the prettyPrint flag.
+    
     std::string base_indent = prettyPrint ? "  " : "";
     std::string deeper_indent = prettyPrint ? base_indent + "  " : "";
-    std::string deepest_indent = prettyPrint ? deeper_indent + "  " : "";
+    std::string deepest_indent = prettyPrint ? deeper_indent + "  " : ""; // Indent for array elements
     std::string newline = prettyPrint ? "\n" : "";
     std::string space = prettyPrint ? " " : "";
 
@@ -305,47 +305,57 @@ std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets) const {
         oss << "{" << newline;
     }
 
-    // Add base properties
     oss << base_indent << "\"opType\":" << space << "\"" << Operator::typeToString(this->getOpType()) << "\"," << newline;
     oss << base_indent << "\"operatorId\":" << space << this->operatorId << "," << newline;
-    oss << base_indent << "\"outputDistanceBuckets\":" << space << "[" ;
-    if( outputConnections.count() > 0){
-        oss << newline; // add new line for array bracket
-    }
+    oss << base_indent << "\"outputDistanceBuckets\":" << space << "[";
 
-    bool firstBucket = true;
-    if (outputConnections.maxIdx() >= 0) {
-        for (int i = 0; i <= this->outputConnections.maxIdx(); ++i) {
-            const std::unordered_set<uint32_t>* bucket = outputConnections.get(i);
-            if (bucket != nullptr && !bucket->empty()) {
-                if (!firstBucket) {
-                    oss << "," << newline;
-                }
-                firstBucket = false;
-
-                oss << deeper_indent << "{" << newline;
-                oss << deepest_indent << "\"distance\":" << space << i << "," << newline;
-                oss << deepest_indent << "\"targetOperatorIds\":" << space << "[";
-
-                bool firstId = true;
-                for (uint32_t targetId : *bucket) {
-                    if (!firstId) {
-                        oss << "," << space;
-                    }
-                    firstId = false;
-                    oss << targetId;
-                }
-                oss << "]" << newline;
-                oss << deeper_indent << "}";
-            }
+    std::vector<std::pair<int, const std::unordered_set<uint32_t>*>> sortedBuckets;
+    for (int d = 0; d <= this->outputConnections.maxIdx(); ++d) {
+        const auto* targetsPtr = outputConnections.get(d);
+        if (targetsPtr != nullptr && !targetsPtr->empty()) {
+            sortedBuckets.push_back({d, targetsPtr});
         }
     }
+    std::sort(sortedBuckets.begin(), sortedBuckets.end(), [](const auto& a, const auto& b){ return a.first < b.first; });
 
-    // CORRECTED: Only add a newline before the closing bracket if buckets were actually printed.
-    if (!firstBucket) {
+    for (size_t i = 0; i < sortedBuckets.size(); ++i) {
+        const auto& pair = sortedBuckets[i];
+        int distance = pair.first;
+        const auto& bucket = *pair.second;
+        
+        oss << newline << deeper_indent << "{" << newline;
+        oss << deeper_indent << "  \"distance\":" << space << distance << "," << newline;
+        oss << deeper_indent << "  \"targetOperatorIds\":" << space << "[";
+
+        // --- START OF CORRECTED LOGIC FOR NESTED ARRAY ---
+        if (prettyPrint && !bucket.empty()) {
+            oss << newline;
+            
+            std::vector<uint32_t> sortedTargets(bucket.begin(), bucket.end());
+            std::sort(sortedTargets.begin(), sortedTargets.end());
+
+            for (size_t j = 0; j < sortedTargets.size(); ++j) {
+                oss << deepest_indent << "  " << sortedTargets[j] << (j == sortedTargets.size() - 1 ? "" : ",") << newline;
+            }
+            oss << deeper_indent << "  ";
+
+        } else { // Compact version of the nested array
+            std::vector<uint32_t> sortedTargets(bucket.begin(), bucket.end());
+            std::sort(sortedTargets.begin(), sortedTargets.end());
+            for (size_t j = 0; j < sortedTargets.size(); ++j) {
+                oss << sortedTargets[j] << (j == sortedTargets.size() - 1 ? "" : ",");
+            }
+        }
+        // --- END OF CORRECTED LOGIC ---
+
+        oss << "]" << newline;
+        oss << deeper_indent << "}" << (i == sortedBuckets.size() - 1 ? "" : ",");
+    }
+
+    if (!sortedBuckets.empty()) {
         oss << newline << base_indent;
     }
-    oss << "]"; // Closing bracket for outputDistanceBuckets
+    oss << "]";
 
     if (encloseInBrackets) {
         oss << newline << "}";

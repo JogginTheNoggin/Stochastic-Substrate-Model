@@ -14,6 +14,8 @@
 
 // Anonymous namespace for helper functions specific to this test file
 namespace {
+    std::string MOCK_FILE_DIR = "golden_files/outOperator/";
+
     char expectedCharFromInt(int value) {
         constexpr int INT_VALUE_BITS = std::numeric_limits<int>::digits;
         constexpr int CHAR_BITS = 8;
@@ -570,7 +572,7 @@ TEST_F(OutOperatorJsonTests, ToJsonPrettyPrintMatchesGoldenFile) {
     op.message(100);
 
     // Read the expected output from the golden file.
-    std::string goldenOutput = JsonTestHelpers::ReadGoldenFile("out_operator_pretty.json");
+    std::string goldenOutput = JsonTestHelpers::readGoldenFile(MOCK_FILE_DIR + "out_operator_pretty.json");
 
     // ACT
     std::string actualOutput = op.toJson(true, true);

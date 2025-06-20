@@ -1,0 +1,12 @@
+{
+  "opType": "UNDEFINED",
+  "operatorId": 124,
+  "outputDistanceBuckets": [
+    {
+      "distance": 2,
+      "targetOperatorIds": [
+        200
+      ]
+    }
+  ]
+}

@@ -122,8 +122,8 @@ static int getJsonIntValue(const std::string& json, const std::string& key) {
 /**
  *  @note Place files in the build/golden_files or where the test exe is located
  */  
-static inline std::string ReadGoldenFile(const std::string& path) {
-    std::ifstream file("golden_files/" + path);
+static inline std::string readGoldenFile(const std::string& path) {
+    std::ifstream file(path);
     if (!file) {
         throw std::runtime_error("Failed to open golden file: " + path);
     }
