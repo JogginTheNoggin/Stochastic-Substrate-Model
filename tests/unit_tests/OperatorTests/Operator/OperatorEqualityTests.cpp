@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "headers/operators/AddOperator.h" // Using AddOperator for tests
+#include "helpers/TestOperator.h" // Changed to TestOperator
 #include "headers/operators/Operator.h"
 #include <memory>
 #include <unordered_set> // Required for addConnectionInternal->getOutputConnections->DynamicArray<std::unordered_set>
@@ -7,19 +7,17 @@
 // Fixture for Operator equality tests
 class OperatorEqualityTest : public ::testing::Test {
 protected:
-    // Helper to create AddOperator with specific parameters for testing
-    // AddOperator(int id, int initialWeight = 1, int initialThreshold = 0);
-    std::unique_ptr<AddOperator> createOp(uint32_t id, int weight = 1, int threshold = 0) {
-        // AddOperator's constructor takes int for id.
-        return std::make_unique<AddOperator>(static_cast<int>(id), weight, threshold);
+    // Helper to create TestOperator
+    std::unique_ptr<TestOperator> createOp(uint32_t id) {
+        return std::make_unique<TestOperator>(id);
     }
 };
 
 // Test cases for Operator::equals, operator==, operator!=
 
 TEST_F(OperatorEqualityTest, Equals_SameIdNoConnections) {
-    auto op1 = createOp(100);
-    auto op2 = createOp(100);
+    std::unique_ptr<TestOperator> op1 = createOp(100); // Changed type
+    std::unique_ptr<TestOperator> op2 = createOp(100); // Changed type
 
     EXPECT_TRUE(op1->equals(*op2));
     EXPECT_TRUE(*op1 == *op2);
@@ -27,8 +25,8 @@ TEST_F(OperatorEqualityTest, Equals_SameIdNoConnections) {
 }
 
 TEST_F(OperatorEqualityTest, Equals_DifferentIdNoConnections) {
-    auto op1 = createOp(101);
-    auto op2 = createOp(102);
+    std::unique_ptr<TestOperator> op1 = createOp(101); // Changed type
+    std::unique_ptr<TestOperator> op2 = createOp(102); // Changed type
 
     EXPECT_FALSE(op1->equals(*op2)); // Operator::equals compares ID
     EXPECT_FALSE(*op1 == *op2);     // operator== will also be false due to ID
@@ -36,9 +34,9 @@ TEST_F(OperatorEqualityTest, Equals_DifferentIdNoConnections) {
 }
 
 TEST_F(OperatorEqualityTest, Equals_SameIdSameSingleConnection) {
-    auto op1 = createOp(103);
+    std::unique_ptr<TestOperator> op1 = createOp(103); // Changed type
     op1->addConnectionInternal(200, 1);
-    auto op2 = createOp(103);
+    std::unique_ptr<TestOperator> op2 = createOp(103); // Changed type
     op2->addConnectionInternal(200, 1);
 
     EXPECT_TRUE(op1->equals(*op2));
@@ -46,9 +44,9 @@ TEST_F(OperatorEqualityTest, Equals_SameIdSameSingleConnection) {
 }
 
 TEST_F(OperatorEqualityTest, Equals_SameIdDifferentSingleConnectionTarget) {
-    auto op1 = createOp(104);
+    std::unique_ptr<TestOperator> op1 = createOp(104); // Changed type
     op1->addConnectionInternal(200, 1);
-    auto op2 = createOp(104);
+    std::unique_ptr<TestOperator> op2 = createOp(104); // Changed type
     op2->addConnectionInternal(201, 1); // Different target ID
 
     EXPECT_FALSE(op1->equals(*op2)); // Connection comparison should fail
@@ -56,9 +54,9 @@ TEST_F(OperatorEqualityTest, Equals_SameIdDifferentSingleConnectionTarget) {
 }
 
 TEST_F(OperatorEqualityTest, Equals_SameIdDifferentSingleConnectionDistance) {
-    auto op1 = createOp(105);
+    std::unique_ptr<TestOperator> op1 = createOp(105); // Changed type
     op1->addConnectionInternal(200, 1);
-    auto op2 = createOp(105);
+    std::unique_ptr<TestOperator> op2 = createOp(105); // Changed type
     op2->addConnectionInternal(200, 2); // Different distance
 
     EXPECT_FALSE(op1->equals(*op2)); // Connection comparison should fail
@@ -66,12 +64,12 @@ TEST_F(OperatorEqualityTest, Equals_SameIdDifferentSingleConnectionDistance) {
 }
 
 TEST_F(OperatorEqualityTest, Equals_SameIdMultipleConnectionsSameOrder) {
-    auto op1 = createOp(106);
+    std::unique_ptr<TestOperator> op1 = createOp(106); // Changed type
     op1->addConnectionInternal(200, 1);
     op1->addConnectionInternal(201, 1);
     op1->addConnectionInternal(202, 2);
 
-    auto op2 = createOp(106);
+    std::unique_ptr<TestOperator> op2 = createOp(106); // Changed type
     op2->addConnectionInternal(200, 1);
     op2->addConnectionInternal(201, 1);
     op2->addConnectionInternal(202, 2);
@@ -83,11 +81,11 @@ TEST_F(OperatorEqualityTest, Equals_SameIdMultipleConnectionsSameOrder) {
 TEST_F(OperatorEqualityTest, Equals_SameIdMultipleConnectionsDifferentOrderInSet) {
     // Unordered_set means order of insertion for 200/201 doesn't guarantee read order,
     // but the sets themselves should be equal.
-    auto op1 = createOp(107);
+    std::unique_ptr<TestOperator> op1 = createOp(107); // Changed type
     op1->addConnectionInternal(200, 1); // Target 200
     op1->addConnectionInternal(201, 1); // Target 201
 
-    auto op2 = createOp(107);
+    std::unique_ptr<TestOperator> op2 = createOp(107); // Changed type
     op2->addConnectionInternal(201, 1); // Target 201 (added first to set)
     op2->addConnectionInternal(200, 1); // Target 200 (added second to set)
 
@@ -98,11 +96,11 @@ TEST_F(OperatorEqualityTest, Equals_SameIdMultipleConnectionsDifferentOrderInSet
 
 
 TEST_F(OperatorEqualityTest, Equals_SameIdOneMissingConnection) {
-    auto op1 = createOp(108);
+    std::unique_ptr<TestOperator> op1 = createOp(108); // Changed type
     op1->addConnectionInternal(200, 1);
     op1->addConnectionInternal(201, 2);
 
-    auto op2 = createOp(108);
+    std::unique_ptr<TestOperator> op2 = createOp(108); // Changed type
     op2->addConnectionInternal(200, 1); // op2 is missing connection to 201 at distance 2
 
     EXPECT_FALSE(op1->equals(*op2)); // compareConnections will find connB.count() different or a set mismatch
@@ -110,10 +108,10 @@ TEST_F(OperatorEqualityTest, Equals_SameIdOneMissingConnection) {
 }
 
 TEST_F(OperatorEqualityTest, Equals_SameIdOneExtraConnection) {
-    auto op1 = createOp(109);
+    std::unique_ptr<TestOperator> op1 = createOp(109); // Changed type
     op1->addConnectionInternal(200, 1);
 
-    auto op2 = createOp(109);
+    std::unique_ptr<TestOperator> op2 = createOp(109); // Changed type
     op2->addConnectionInternal(200, 1);
     op2->addConnectionInternal(201, 2); // op2 has an extra connection
 
@@ -121,40 +119,38 @@ TEST_F(OperatorEqualityTest, Equals_SameIdOneExtraConnection) {
     EXPECT_FALSE(*op1 == *op2);
 }
 
-TEST_F(OperatorEqualityTest, Equals_SameBaseDifferentDerivedParams) {
-    // op1 and op2 will have same ID and connections (Operator part is equal)
-    // But different AddOperator params (weight/threshold)
-    auto op1 = createOp(110, 10, 20); // weight 10, threshold 20
+TEST_F(OperatorEqualityTest, Equals_IdenticalTestOperatorsViaCreateOp) { // Renamed and logic adjusted
+    // TestOperator does not have additional derived parameters beyond Operator.
+    // So, if base Operator parts are equal, TestOperators are equal.
+    std::unique_ptr<TestOperator> op1 = createOp(110);
     op1->addConnectionInternal(300, 1);
 
-    auto op2 = createOp(110, 15, 25); // weight 15, threshold 25
-    op2->addConnectionInternal(300, 1);
+    std::unique_ptr<TestOperator> op2 = createOp(110); // Same ID
+    op2->addConnectionInternal(300, 1); // Same connection
 
-    // Operator::equals(*op2) would be true if called directly on base pointers of same type.
-    // However, we are calling AddOperator::equals which calls Operator::equals
-    // and then compares its own members.
-    // So, op1->equals(*op2) should be false because AddOperator members differ.
-    EXPECT_FALSE(op1->equals(*op2)) << "AddOperator::equals should be false due to different weight/threshold";
+    // TestOperator::equals calls Operator::equals. Since IDs and connections are the same,
+    // Operator::equals will be true.
+    EXPECT_TRUE(op1->equals(*op2)) << "TestOperator::equals should be true as base parts are identical.";
 
-    // operator== first checks getOpType (which is same: ADD for both).
-    // Then it calls lhs.equals(rhs), which is op1->equals(*op2) -> AddOperator::equals
-    EXPECT_FALSE(*op1 == *op2) << "operator== should be false due to different AddOperator params";
-    EXPECT_TRUE(*op1 != *op2);
+    // operator== first checks getOpType (both UNDEFINED for TestOperator via createOp).
+    // Then it calls lhs.equals(rhs).
+    EXPECT_TRUE(*op1 == *op2) << "operator== should be true for identical TestOperators.";
+    EXPECT_FALSE(*op1 != *op2);
 }
 
-TEST_F(OperatorEqualityTest, Equals_SameBaseAndDerivedParams) {
-    auto op1 = createOp(111, 10, 20);
+TEST_F(OperatorEqualityTest, Equals_IdenticalTestOperatorsWithConnections) { // Renamed and logic adjusted
+    std::unique_ptr<TestOperator> op1 = std::make_unique<TestOperator>(111); // Direct creation
     op1->addConnectionInternal(300, 1);
 
-    auto op2 = createOp(111, 10, 20); // Same weight and threshold
-    op2->addConnectionInternal(300, 1);
+    std::unique_ptr<TestOperator> op2 = std::make_unique<TestOperator>(111); // Direct creation, same ID
+    op2->addConnectionInternal(300, 1); // Same connection
 
-    EXPECT_TRUE(op1->equals(*op2)); // AddOperator::equals should be true
+    // TestOperator::equals calls Operator::equals.
+    EXPECT_TRUE(op1->equals(*op2)) << "TestOperator::equals should be true for identical setup.";
     EXPECT_TRUE(*op1 == *op2);
     EXPECT_FALSE(*op1 != *op2);
 }
 
-// Note: Testing operator== between different derived types (e.g., AddOperator vs HypoSubOperator)
-// is not possible here as we only have AddOperator. If other types existed,
+// Note: Testing operator== between different derived types (e.g., TestOperator vs a different future test operator)
 // operator==(const Operator& lhs, const Operator& rhs) would return false
-// if lhs.getOpType() != rhs.getOpType().
+// if lhs.getOpType() != rhs.getOpType(). TestOperator always has type UNDEFINED.

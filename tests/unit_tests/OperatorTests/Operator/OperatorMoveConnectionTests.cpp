@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "headers/operators/AddOperator.h"
+#include "helpers/TestOperator.h" // Changed to TestOperator
 #include "headers/operators/Operator.h"
 #include <memory>
 #include "headers/util/DynamicArray.h"
@@ -9,7 +9,7 @@ class OperatorMoveConnectionTest : public ::testing::Test {
 };
 
 TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalBasic) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(20);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(20); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(200, 2);
@@ -28,7 +28,7 @@ TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalBasic) {
 }
 
 TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalToSameDistance) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(21);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(21); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(210, 3);
@@ -43,7 +43,7 @@ TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalToSameDistance) {
 }
 
 TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalNonExistentTarget) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(22);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(22); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(220, 1);
@@ -63,7 +63,7 @@ TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalNonExistentTarget) {
 
 
 TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalFromNonExistentDistance) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(23);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(23); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(230, 2);
@@ -84,7 +84,7 @@ TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalFromNonExistentDistance
 }
 
 TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalToExistingBucket) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(24);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(24); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(240, 1);
@@ -106,7 +106,7 @@ TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalToExistingBucket) {
 }
 
 TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalWithNegativeDistances) {
-    std::unique_ptr<AddOperator> op = std::make_unique<AddOperator>(25);
+    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(25); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(250, 3);
@@ -123,7 +123,7 @@ TEST_F(OperatorMoveConnectionTest, MoveConnectionInternalWithNegativeDistances) 
     EXPECT_EQ(conns1.count(), 1); // no new bucket has been made
 
 
-    std::unique_ptr<AddOperator> op2 = std::make_unique<AddOperator>(26);
+    std::unique_ptr<TestOperator> op2 = std::make_unique<TestOperator>(26); // Changed to TestOperator
     op2->addConnectionInternal(260, 3); // add operator to bucket 3, should contain 2 now
     op2->moveConnectionInternal(260, 3, -1); // will not move to negative distance
 
