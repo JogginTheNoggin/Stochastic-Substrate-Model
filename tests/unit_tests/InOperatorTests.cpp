@@ -146,17 +146,17 @@ TEST_F(InOperatorTest, MessageInt_ZeroValue) {
     EXPECT_TRUE(compareAccumulatedData(expected, getAccumulatedDataLocal(*op)));
 }
 
-TEST_F(InOperatorTest, MessageInt_NegativeValue_ShouldBecomeZero) {
+TEST_F(InOperatorTest, MessageInt_NegativeValue_Base) {
     op->message(-5);
-    std::vector<int> expected = {0}; // Negative values are converted to 0 by InOperator::message(int)
+    std::vector<int> expected = {-5}; 
     EXPECT_TRUE(compareAccumulatedData(expected, getAccumulatedDataLocal(*op)));
 
     op->message(10);
-    expected = {0, 10};
+    expected = {-5, 10};
     EXPECT_TRUE(compareAccumulatedData(expected, getAccumulatedDataLocal(*op)));
 
     op->message(-100);
-    expected = {0, 10, 0};
+    expected = {-5, 10, -100};
     EXPECT_TRUE(compareAccumulatedData(expected, getAccumulatedDataLocal(*op)));
 }
 
@@ -165,20 +165,20 @@ TEST_F(InOperatorTest, MessageInt_MixedValues) {
     std::vector<int> expected = {100};
     EXPECT_TRUE(compareAccumulatedData(expected, getAccumulatedDataLocal(*op)));
 
-    op->message(-20); // Becomes 0
-    expected = {100, 0};
+    op->message(-20); 
+    expected = {100, -20};
     EXPECT_TRUE(compareAccumulatedData(expected, getAccumulatedDataLocal(*op)));
 
     op->message(0);
-    expected = {100, 0, 0};
+    expected = {100, -20, 0};
     EXPECT_TRUE(compareAccumulatedData(expected, getAccumulatedDataLocal(*op)));
 
     op->message(30);
-    expected = {100, 0, 0, 30};
+    expected = {100, -20, 0, 30};
     EXPECT_TRUE(compareAccumulatedData(expected, getAccumulatedDataLocal(*op)));
 
-    op->message(-1); // Becomes 0
-    expected = {100, 0, 0, 30, 0};
+    op->message(-1); 
+    expected = {100, -20, 0, 30, -1};
     EXPECT_TRUE(compareAccumulatedData(expected, getAccumulatedDataLocal(*op)));
 }
 
@@ -448,9 +448,9 @@ TEST_F(InOperatorTest, ProcessData_AccumulatedDataWithVariousValues_IsCleared) {
     op = std::make_unique<InOperator>(operatorId); // Reset op for clean data
     op->message(15); // int
     op->message(0);  // int
-    op->message(-5); // int, becomes 0
+    op->message(-5); // int
 
-    std::vector<int> expectedBefore = {15, 0, 0};
+    std::vector<int> expectedBefore = {15, 0, -5};
     ASSERT_TRUE(compareAccumulatedData(expectedBefore, getAccumulatedDataLocal(*op))) << "Mismatch in data before processData";
 
 

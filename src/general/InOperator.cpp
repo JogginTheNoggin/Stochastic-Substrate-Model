@@ -92,12 +92,6 @@ void InOperator::changeParams(const std::vector<int>& params) {
 }
 
 void InOperator::message(const int payloadData){
-    if (payloadData < 0) { // we don't do negative numbers
-        accumulatedData.push_back(0); // submit as zero input, low
-        // TODO consider is zero acceptable, what about audio, can't audio values be negative
-        return; 
-    }
-
     accumulatedData.push_back(payloadData); 
 }
 

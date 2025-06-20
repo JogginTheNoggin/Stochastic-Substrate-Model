@@ -51,11 +51,6 @@ void OutOperator::changeParams(const std::vector<int>& params) {
 }
 
 void OutOperator::message(const int payloadData){
-    if (payloadData < 0) { // we don't do negative numbers
-        data.push_back(0); // submit as zero input, low
-        // TODO consider is zero acceptable, what about audio, can't audio values be negative
-        return; 
-    }
 
     data.push_back(payloadData); 
 }
