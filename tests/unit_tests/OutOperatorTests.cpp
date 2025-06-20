@@ -2,14 +2,15 @@
 #include "operators/OutOperator.h" // Adjust path as necessary based on include paths in CMake
 #include "operators/AddOperator.h"   // For cross-type equality test
 #include "helpers/JsonTestHelpers.h" // For JSON comparison
-#include "helpers/MockRandomizer.h" // For randomInit tests
+#include "helpers/MockRandomizer.h"  // For MockRandomizer
+#include "util/IdRange.h"          // For IdRange
 #include "util/Serializer.h"       // For serialization tests
 #include <limits> // Required for std::numeric_limits
 #include <cmath>  // Required for std::round, std::isnan, std::isinf (though indirectly via OutOperator)
 #include <string> // Required for std::string
 #include <vector> // Required for std::vector
 #include <cstddef> // Required for std::byte
-#include "nlohmann/json.hpp" // For nlohmann::json type in helper
+// #include "nlohmann/json.hpp" // Removed this include
 
 // Anonymous namespace for helper functions specific to this test file
 namespace {
@@ -46,15 +47,22 @@ class OutOperatorTest : public ::testing::Test {
 protected:
     OutOperator op{1};
 
-    nlohmann::json getOperatorDataJson(OutOperator& operator_instance) {
+    // Updated to use JsonTestHelpers and return std::vector<int>
+    std::vector<int> getOperatorDataJson(OutOperator& operator_instance) {
         // toJson(prettyPrint=false, encloseInBrackets=true) is the default for toJson()
-        auto json_obj = JsonTestHelpers::parseJson(operator_instance.toJson(false, true));
-        if (json_obj.contains("data") && json_obj["data"].is_array()) {
-            return json_obj["data"];
-        }
-        return nlohmann::json::array();
+        std::string json_str = operator_instance.toJson(false, true);
+        return JsonTestHelpers::getJsonArrayIntValue(json_str, "data");
     }
 };
+
+TEST_F(OutOperatorTest, GetOpTypeReturnsCorrectType) {
+    // op is created by the OutOperatorTest fixture
+    ASSERT_EQ(op.getOpType(), Operator::Type::OUT);
+
+    // Also test with a locally created instance for good measure
+    OutOperator local_op(999);
+    ASSERT_EQ(local_op.getOpType(), Operator::Type::OUT);
+}
 
 // Test suite for message handling specifically
 class OutOperatorMessageTests : public OutOperatorTest {
@@ -66,20 +74,20 @@ TEST_F(OutOperatorMessageTests, HandlesIntMessages) {
     local_op.message(-5);
     local_op.message(0);
 
-    auto data_array = getOperatorDataJson(local_op);
+    std::vector<int> data_array = getOperatorDataJson(local_op); // Now returns std::vector<int>
     ASSERT_EQ(data_array.size(), 3);
-    ASSERT_EQ(data_array[0].get<int>(), 10);
-    ASSERT_EQ(data_array[1].get<int>(), -5);
-    ASSERT_EQ(data_array[2].get<int>(), 0);
+    ASSERT_EQ(data_array[0], 10);    // Direct comparison
+    ASSERT_EQ(data_array[1], -5);   // Direct comparison
+    ASSERT_EQ(data_array[2], 0);    // Direct comparison
 
     OutOperator op_max_min(2);
     op_max_min.message(std::numeric_limits<int>::max());
     op_max_min.message(std::numeric_limits<int>::min());
 
-    data_array = getOperatorDataJson(op_max_min);
+    data_array = getOperatorDataJson(op_max_min); // Now returns std::vector<int>
     ASSERT_EQ(data_array.size(), 2);
-    ASSERT_EQ(data_array[0].get<int>(), std::numeric_limits<int>::max());
-    ASSERT_EQ(data_array[1].get<int>(), std::numeric_limits<int>::min());
+    ASSERT_EQ(data_array[0], std::numeric_limits<int>::max()); // Direct comparison
+    ASSERT_EQ(data_array[1], std::numeric_limits<int>::min()); // Direct comparison
 }
 
 TEST_F(OutOperatorMessageTests, HandlesFloatMessagesRounding) {
@@ -92,15 +100,15 @@ TEST_F(OutOperatorMessageTests, HandlesFloatMessagesRounding) {
     local_op.message(0.4f);
     local_op.message(0.6f);
 
-    auto data_array = getOperatorDataJson(local_op);
+    std::vector<int> data_array = getOperatorDataJson(local_op);
     ASSERT_EQ(data_array.size(), 7);
-    ASSERT_EQ(data_array[0].get<int>(), 10);
-    ASSERT_EQ(data_array[1].get<int>(), 11);
-    ASSERT_EQ(data_array[2].get<int>(), -5);
-    ASSERT_EQ(data_array[3].get<int>(), -6);
-    ASSERT_EQ(data_array[4].get<int>(), 0);
-    ASSERT_EQ(data_array[5].get<int>(), 0);
-    ASSERT_EQ(data_array[6].get<int>(), 1);
+    ASSERT_EQ(data_array[0], 10);
+    ASSERT_EQ(data_array[1], 11);
+    ASSERT_EQ(data_array[2], -5);
+    ASSERT_EQ(data_array[3], -6);
+    ASSERT_EQ(data_array[4], 0);
+    ASSERT_EQ(data_array[5], 0);
+    ASSERT_EQ(data_array[6], 1);
 }
 
 TEST_F(OutOperatorMessageTests, HandlesFloatMessagesClamping) {
@@ -110,12 +118,12 @@ TEST_F(OutOperatorMessageTests, HandlesFloatMessagesClamping) {
     local_op.message(static_cast<float>(std::numeric_limits<int>::max()) + 100.0f);
     local_op.message(static_cast<float>(std::numeric_limits<int>::min()) - 100.0f);
 
-    auto data_array = getOperatorDataJson(local_op);
+    std::vector<int> data_array = getOperatorDataJson(local_op);
     ASSERT_EQ(data_array.size(), 4);
-    ASSERT_EQ(data_array[0].get<int>(), std::numeric_limits<int>::max());
-    ASSERT_EQ(data_array[1].get<int>(), std::numeric_limits<int>::min());
-    ASSERT_EQ(data_array[2].get<int>(), std::numeric_limits<int>::max());
-    ASSERT_EQ(data_array[3].get<int>(), std::numeric_limits<int>::min());
+    ASSERT_EQ(data_array[0], std::numeric_limits<int>::max());
+    ASSERT_EQ(data_array[1], std::numeric_limits<int>::min());
+    ASSERT_EQ(data_array[2], std::numeric_limits<int>::max());
+    ASSERT_EQ(data_array[3], std::numeric_limits<int>::min());
 }
 
 TEST_F(OutOperatorMessageTests, HandlesFloatMessagesSpecialValues) {
@@ -125,9 +133,9 @@ TEST_F(OutOperatorMessageTests, HandlesFloatMessagesSpecialValues) {
     local_op.message(std::numeric_limits<float>::infinity());
     local_op.message(-std::numeric_limits<float>::infinity());
 
-    auto data_array = getOperatorDataJson(local_op);
+    std::vector<int> data_array = getOperatorDataJson(local_op);
     ASSERT_EQ(data_array.size(), 1);
-    ASSERT_EQ(data_array[0].get<int>(), 1);
+    ASSERT_EQ(data_array[0], 1);
 }
 
 TEST_F(OutOperatorMessageTests, HandlesDoubleMessagesRounding) {
@@ -140,15 +148,15 @@ TEST_F(OutOperatorMessageTests, HandlesDoubleMessagesRounding) {
     local_op.message(0.4);
     local_op.message(0.6);
 
-    auto data_array = getOperatorDataJson(local_op);
+    std::vector<int> data_array = getOperatorDataJson(local_op);
     ASSERT_EQ(data_array.size(), 7);
-    ASSERT_EQ(data_array[0].get<int>(), 20);
-    ASSERT_EQ(data_array[1].get<int>(), 21);
-    ASSERT_EQ(data_array[2].get<int>(), -15);
-    ASSERT_EQ(data_array[3].get<int>(), -16);
-    ASSERT_EQ(data_array[4].get<int>(), 0);
-    ASSERT_EQ(data_array[5].get<int>(), 0);
-    ASSERT_EQ(data_array[6].get<int>(), 1);
+    ASSERT_EQ(data_array[0], 20);
+    ASSERT_EQ(data_array[1], 21);
+    ASSERT_EQ(data_array[2], -15);
+    ASSERT_EQ(data_array[3], -16);
+    ASSERT_EQ(data_array[4], 0);
+    ASSERT_EQ(data_array[5], 0);
+    ASSERT_EQ(data_array[6], 1);
 }
 
 TEST_F(OutOperatorMessageTests, HandlesDoubleMessagesClamping) {
@@ -158,12 +166,12 @@ TEST_F(OutOperatorMessageTests, HandlesDoubleMessagesClamping) {
     local_op.message(static_cast<double>(std::numeric_limits<int>::max()) + 100.0);
     local_op.message(static_cast<double>(std::numeric_limits<int>::min()) - 100.0);
 
-    auto data_array = getOperatorDataJson(local_op);
+    std::vector<int> data_array = getOperatorDataJson(local_op);
     ASSERT_EQ(data_array.size(), 4);
-    ASSERT_EQ(data_array[0].get<int>(), std::numeric_limits<int>::max());
-    ASSERT_EQ(data_array[1].get<int>(), std::numeric_limits<int>::min());
-    ASSERT_EQ(data_array[2].get<int>(), std::numeric_limits<int>::max());
-    ASSERT_EQ(data_array[3].get<int>(), std::numeric_limits<int>::min());
+    ASSERT_EQ(data_array[0], std::numeric_limits<int>::max());
+    ASSERT_EQ(data_array[1], std::numeric_limits<int>::min());
+    ASSERT_EQ(data_array[2], std::numeric_limits<int>::max());
+    ASSERT_EQ(data_array[3], std::numeric_limits<int>::min());
 }
 
 TEST_F(OutOperatorMessageTests, HandlesDoubleMessagesSpecialValues) {
@@ -173,9 +181,9 @@ TEST_F(OutOperatorMessageTests, HandlesDoubleMessagesSpecialValues) {
     local_op.message(std::numeric_limits<double>::infinity());
     local_op.message(-std::numeric_limits<double>::infinity());
 
-    auto data_array = getOperatorDataJson(local_op);
+    std::vector<int> data_array = getOperatorDataJson(local_op);
     ASSERT_EQ(data_array.size(), 1);
-    ASSERT_EQ(data_array[0].get<int>(), 2);
+    ASSERT_EQ(data_array[0], 2);
 }
 
 TEST_F(OutOperatorMessageTests, HandlesMixedTypeMessages) {
@@ -187,34 +195,26 @@ TEST_F(OutOperatorMessageTests, HandlesMixedTypeMessages) {
     local_op.message(0.4f);
     local_op.message(static_cast<double>(std::numeric_limits<int>::min()) - 2000.0);
 
-    auto data_array = getOperatorDataJson(local_op);
+    std::vector<int> data_array = getOperatorDataJson(local_op);
     ASSERT_EQ(data_array.size(), 6);
-    ASSERT_EQ(data_array[0].get<int>(), 100);
-    ASSERT_EQ(data_array[1].get<int>(), 21);
-    ASSERT_EQ(data_array[2].get<int>(), -30);
-    ASSERT_EQ(data_array[3].get<int>(), std::numeric_limits<int>::max());
-    ASSERT_EQ(data_array[4].get<int>(), 0);
-    ASSERT_EQ(data_array[5].get<int>(), std::numeric_limits<int>::min());
+    ASSERT_EQ(data_array[0], 100);
+    ASSERT_EQ(data_array[1], 21);
+    ASSERT_EQ(data_array[2], -30);
+    ASSERT_EQ(data_array[3], std::numeric_limits<int>::max());
+    ASSERT_EQ(data_array[4], 0);
+    ASSERT_EQ(data_array[5], std::numeric_limits<int>::min());
 }
 
 TEST_F(OutOperatorTest, EmptyOperatorToJsonCheck) {
     OutOperator local_op(1);
     std::string json_str = local_op.toJson();
-    nlohmann::json actual_json_obj = JsonTestHelpers::parseJson(json_str);
 
-    ASSERT_TRUE(actual_json_obj.contains("operatorId"));
-    ASSERT_EQ(actual_json_obj["operatorId"].get<uint32_t>(), 1);
+    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_str, "operatorId"), 1);
+    ASSERT_NE(json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
+    ASSERT_NE(json_str.find("\"outputConnections\":[]"), std::string::npos);
 
-    ASSERT_TRUE(actual_json_obj.contains("opType"));
-    ASSERT_EQ(actual_json_obj["opType"].get<std::string>(), Operator::typeToString(Operator::Type::OUT));
-
-    ASSERT_TRUE(actual_json_obj.contains("outputConnections"));
-    ASSERT_TRUE(actual_json_obj["outputConnections"].is_array());
-    ASSERT_TRUE(actual_json_obj["outputConnections"].empty());
-
-    ASSERT_TRUE(actual_json_obj.contains("data"));
-    ASSERT_TRUE(actual_json_obj["data"].is_array());
-    ASSERT_TRUE(actual_json_obj["data"].empty());
+    std::vector<int> data_vec = JsonTestHelpers::getJsonArrayIntValue(json_str, "data");
+    ASSERT_TRUE(data_vec.empty());
 }
 
 TEST_F(OutOperatorTest, HasOutputFalseWhenEmpty) {
@@ -274,31 +274,31 @@ TEST_F(OutOperatorTest, ProcessDataDoesNotAlterDataBuffer) {
     local_op.message(10);
     local_op.message(20.5f);
 
-    nlohmann::json data_before = getOperatorDataJson(local_op);
+    std::vector<int> data_before = getOperatorDataJson(local_op); // Returns std::vector<int>
     bool has_output_before = local_op.hasOutput();
 
     local_op.processData();
 
-    nlohmann::json data_after = getOperatorDataJson(local_op);
+    std::vector<int> data_after = getOperatorDataJson(local_op); // Returns std::vector<int>
     bool has_output_after = local_op.hasOutput();
 
-    ASSERT_EQ(data_before, data_after);
+    ASSERT_EQ(data_before, data_after); // Compares std::vector<int>
     ASSERT_EQ(has_output_before, has_output_after);
     ASSERT_TRUE(has_output_after);
     ASSERT_EQ(data_after.size(), 2);
-    ASSERT_EQ(data_after[0].get<int>(), 10);
-    ASSERT_EQ(data_after[1].get<int>(), 21);
+    ASSERT_EQ(data_after[0], 10);
+    ASSERT_EQ(data_after[1], 21);
 }
 
 TEST_F(OutOperatorTest, ProcessDataOnEmptyBufferHasNoEffect) {
     OutOperator local_op(201);
     ASSERT_FALSE(local_op.hasOutput());
 
-    nlohmann::json data_before = getOperatorDataJson(local_op);
+    std::vector<int> data_before = getOperatorDataJson(local_op); // Returns std::vector<int>
 
     local_op.processData();
 
-    nlohmann::json data_after = getOperatorDataJson(local_op);
+    std::vector<int> data_after = getOperatorDataJson(local_op); // Returns std::vector<int>
     bool has_output_after = local_op.hasOutput();
 
     ASSERT_EQ(data_before, data_after);
@@ -537,21 +537,13 @@ class OutOperatorJsonTests : public ::testing::Test {};
 TEST_F(OutOperatorJsonTests, ToJsonSchemaAndContentEmptyData) {
     OutOperator op(123);
     std::string json_str = op.toJson();
-    nlohmann::json parsed_json = JsonTestHelpers::parseJson(json_str);
 
-    ASSERT_TRUE(parsed_json.contains("operatorId"));
-    ASSERT_EQ(parsed_json["operatorId"].get<uint32_t>(), 123);
+    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_str, "operatorId"), 123);
+    ASSERT_NE(json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
+    ASSERT_NE(json_str.find("\"outputConnections\":[]"), std::string::npos);
 
-    ASSERT_TRUE(parsed_json.contains("opType"));
-    ASSERT_EQ(parsed_json["opType"].get<std::string>(), Operator::typeToString(Operator::Type::OUT));
-
-    ASSERT_TRUE(parsed_json.contains("outputConnections"));
-    ASSERT_TRUE(parsed_json["outputConnections"].is_array());
-    ASSERT_TRUE(parsed_json["outputConnections"].empty());
-
-    ASSERT_TRUE(parsed_json.contains("data"));
-    ASSERT_TRUE(parsed_json["data"].is_array());
-    ASSERT_TRUE(parsed_json["data"].empty());
+    std::vector<int> data_vec = JsonTestHelpers::getJsonArrayIntValue(json_str, "data");
+    ASSERT_TRUE(data_vec.empty());
 }
 
 TEST_F(OutOperatorJsonTests, ToJsonSchemaAndContentWithData) {
@@ -560,24 +552,16 @@ TEST_F(OutOperatorJsonTests, ToJsonSchemaAndContentWithData) {
     op.message(20);
     op.message(-5);
     std::string json_str = op.toJson();
-    nlohmann::json parsed_json = JsonTestHelpers::parseJson(json_str);
 
-    ASSERT_TRUE(parsed_json.contains("operatorId"));
-    ASSERT_EQ(parsed_json["operatorId"].get<uint32_t>(), 456);
+    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_str, "operatorId"), 456);
+    ASSERT_NE(json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
+    ASSERT_NE(json_str.find("\"outputConnections\":[]"), std::string::npos);
 
-    ASSERT_TRUE(parsed_json.contains("opType"));
-    ASSERT_EQ(parsed_json["opType"].get<std::string>(), Operator::typeToString(Operator::Type::OUT));
-
-    ASSERT_TRUE(parsed_json.contains("outputConnections"));
-    ASSERT_TRUE(parsed_json["outputConnections"].is_array());
-    ASSERT_TRUE(parsed_json["outputConnections"].empty());
-
-    ASSERT_TRUE(parsed_json.contains("data"));
-    ASSERT_TRUE(parsed_json["data"].is_array());
-    ASSERT_EQ(parsed_json["data"].size(), 3);
-    ASSERT_EQ(parsed_json["data"][0].get<int>(), 10);
-    ASSERT_EQ(parsed_json["data"][1].get<int>(), 20);
-    ASSERT_EQ(parsed_json["data"][2].get<int>(), -5);
+    std::vector<int> data_vec = JsonTestHelpers::getJsonArrayIntValue(json_str, "data");
+    ASSERT_EQ(data_vec.size(), 3);
+    ASSERT_EQ(data_vec[0], 10);
+    ASSERT_EQ(data_vec[1], 20);
+    ASSERT_EQ(data_vec[2], -5);
 }
 
 TEST_F(OutOperatorJsonTests, ToJsonPrettyPrintOption) {
@@ -590,19 +574,19 @@ TEST_F(OutOperatorJsonTests, ToJsonPrettyPrintOption) {
     ASSERT_NE(json_pretty_str.find('\n'), std::string::npos);
     ASSERT_NE(json_pretty_str.find("  "), std::string::npos);
 
-    nlohmann::json parsed_pretty = JsonTestHelpers::parseJson(json_pretty_str);
-    nlohmann::json parsed_compact = JsonTestHelpers::parseJson(json_compact_str);
+    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_pretty_str, "operatorId"), 789);
+    ASSERT_NE(json_pretty_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
+    ASSERT_NE(json_pretty_str.find("\"outputConnections\":[]"), std::string::npos);
+    std::vector<int> pretty_data = JsonTestHelpers::getJsonArrayIntValue(json_pretty_str, "data");
+    ASSERT_EQ(pretty_data.size(), 1);
+    ASSERT_EQ(pretty_data[0], 100);
 
-    ASSERT_EQ(parsed_pretty["operatorId"].get<uint32_t>(), 789);
-    ASSERT_EQ(parsed_compact["operatorId"].get<uint32_t>(), 789);
-    ASSERT_EQ(parsed_pretty["opType"].get<std::string>(), Operator::typeToString(Operator::Type::OUT));
-    ASSERT_EQ(parsed_compact["opType"].get<std::string>(), Operator::typeToString(Operator::Type::OUT));
-    ASSERT_TRUE(parsed_pretty["outputConnections"].empty());
-    ASSERT_TRUE(parsed_compact["outputConnections"].empty());
-    ASSERT_EQ(parsed_pretty["data"][0].get<int>(), 100);
-    ASSERT_EQ(parsed_compact["data"][0].get<int>(), 100);
-
-    ASSERT_EQ(parsed_pretty, parsed_compact);
+    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_compact_str, "operatorId"), 789);
+    ASSERT_NE(json_compact_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
+    ASSERT_NE(json_compact_str.find("\"outputConnections\":[]"), std::string::npos);
+    std::vector<int> compact_data = JsonTestHelpers::getJsonArrayIntValue(json_compact_str, "data");
+    ASSERT_EQ(compact_data.size(), 1);
+    ASSERT_EQ(compact_data[0], 100);
 }
 
 TEST_F(OutOperatorJsonTests, ToJsonEncloseInBracketsOption) {
@@ -620,30 +604,20 @@ TEST_F(OutOperatorJsonTests, ToJsonEncloseInBracketsOption) {
     ASSERT_NE(json_not_enclosed_str.find('{', 0), 0);
     ASSERT_NE(json_not_enclosed_str.back(), '}');
 
-    nlohmann::json parsed_enclosed = JsonTestHelpers::parseJson(json_enclosed_str);
-    ASSERT_TRUE(parsed_enclosed.contains("operatorId"));
-    ASSERT_EQ(parsed_enclosed["operatorId"].get<uint32_t>(), 12);
-    ASSERT_TRUE(parsed_enclosed.contains("opType"));
-    ASSERT_EQ(parsed_enclosed["opType"].get<std::string>(), Operator::typeToString(Operator::Type::OUT));
-    ASSERT_TRUE(parsed_enclosed.contains("outputConnections"));
-    ASSERT_TRUE(parsed_enclosed["outputConnections"].is_array());
-    ASSERT_TRUE(parsed_enclosed["outputConnections"].empty());
-    ASSERT_TRUE(parsed_enclosed.contains("data"));
-    ASSERT_EQ(parsed_enclosed["data"][0].get<int>(), 50);
+    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_enclosed_str, "operatorId"), 12);
+    ASSERT_NE(json_enclosed_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
+    ASSERT_NE(json_enclosed_str.find("\"outputConnections\":[]"), std::string::npos);
+    std::vector<int> enclosed_data = JsonTestHelpers::getJsonArrayIntValue(json_enclosed_str, "data");
+    ASSERT_EQ(enclosed_data.size(), 1);
+    ASSERT_EQ(enclosed_data[0], 50);
 
     std::string temp_valid_json_from_fragment = "{" + json_not_enclosed_str + "}";
-    nlohmann::json parsed_fragment = JsonTestHelpers::parseJson(temp_valid_json_from_fragment);
-    ASSERT_TRUE(parsed_fragment.contains("operatorId"));
-    ASSERT_EQ(parsed_fragment["operatorId"].get<uint32_t>(), 12);
-    ASSERT_TRUE(parsed_fragment.contains("opType"));
-    ASSERT_EQ(parsed_fragment["opType"].get<std::string>(), Operator::typeToString(Operator::Type::OUT));
-    ASSERT_TRUE(parsed_fragment.contains("outputConnections"));
-    ASSERT_TRUE(parsed_fragment["outputConnections"].is_array());
-    ASSERT_TRUE(parsed_fragment["outputConnections"].empty());
-    ASSERT_TRUE(parsed_fragment.contains("data"));
-    ASSERT_EQ(parsed_fragment["data"][0].get<int>(), 50);
-
-    ASSERT_EQ(parsed_enclosed, parsed_fragment);
+    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(temp_valid_json_from_fragment, "operatorId"), 12);
+    ASSERT_NE(temp_valid_json_from_fragment.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
+    ASSERT_NE(temp_valid_json_from_fragment.find("\"outputConnections\":[]"), std::string::npos);
+    std::vector<int> fragment_data = JsonTestHelpers::getJsonArrayIntValue(temp_valid_json_from_fragment, "data");
+    ASSERT_EQ(fragment_data.size(), 1);
+    ASSERT_EQ(fragment_data[0], 50);
 }
 
 // --- Tests for Serialization ---
@@ -654,17 +628,16 @@ TEST_F(OutOperatorSerializationTests, SerializeDeserializeEmptyData) {
 
     std::vector<std::byte> bytes = op1.serializeToBytes();
 
-    ASSERT_GE(bytes.size(), 4u); // Minimum size for the prefix
+    ASSERT_GE(bytes.size(), 4u);
     const std::byte* current_for_prefix_check = bytes.data();
-    // Temporarily advance a pointer to read prefix without affecting actual deserialization start
     const std::byte* end_for_prefix_check = bytes.data() + bytes.size();
     uint32_t deserialized_size_prefix = Serializer::read_uint32(current_for_prefix_check, end_for_prefix_check);
     ASSERT_EQ(deserialized_size_prefix, bytes.size() - 4);
 
-    const std::byte* payload_start = bytes.data() + 4; // Actual payload starts after the size prefix
+    const std::byte* payload_start = bytes.data() + 4;
     const std::byte* stream_end = bytes.data() + bytes.size();
 
-    const std::byte* current_for_deserialization = payload_start; // This pointer will be advanced by constructor
+    const std::byte* current_for_deserialization = payload_start;
     OutOperator op2(current_for_deserialization, stream_end);
 
     ASSERT_TRUE(op1 == op2);
@@ -699,7 +672,7 @@ TEST_F(OutOperatorSerializationTests, SerializeDeserializeMaxMinIntData) {
     OutOperator op1(789);
     op1.message(std::numeric_limits<int>::max());
     op1.message(std::numeric_limits<int>::min());
-    op1.message(0); // Add a zero too for variety
+    op1.message(0);
 
     std::vector<std::byte> bytes = op1.serializeToBytes();
 
@@ -717,4 +690,72 @@ TEST_F(OutOperatorSerializationTests, SerializeDeserializeMaxMinIntData) {
 
     ASSERT_TRUE(op1 == op2);
     ASSERT_EQ(current_for_deserialization, stream_end) << "Not all bytes consumed.";
+}
+
+// --- Tests for Constructor (ID) ---
+class OutOperatorConstructorTests : public ::testing::Test {};
+
+TEST_F(OutOperatorConstructorTests, DefaultConstructorInitializesCorrectly) {
+    uint32_t test_id = 987;
+    OutOperator op(test_id);
+
+    ASSERT_EQ(op.getId(), static_cast<int>(test_id));
+    ASSERT_EQ(op.getOpType(), Operator::Type::OUT);
+    ASSERT_FALSE(op.hasOutput());
+
+    std::string json_str = op.toJson();
+
+    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_str, "operatorId"), static_cast<int>(test_id));
+    ASSERT_NE(json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
+
+    std::vector<int> data_array = JsonTestHelpers::getJsonArrayIntValue(json_str, "data");
+    ASSERT_TRUE(data_array.empty());
+
+    ASSERT_NE(json_str.find("\"outputConnections\":[]"), std::string::npos);
+}
+
+// --- Tests for randomInit ---
+class OutOperatorRandomInitTests : public ::testing::Test {};
+
+TEST_F(OutOperatorRandomInitTests, RandomInitMaxIdDoesNotAddConnections) {
+    OutOperator op(123);
+    MockRandomizer mr;
+    uint32_t initial_id = op.getId();
+
+    std::string initial_json_str = op.toJson();
+    std::vector<int> initial_data_array = JsonTestHelpers::getJsonArrayIntValue(initial_json_str, "data");
+
+    op.randomInit(100u, &mr);
+
+    std::string final_json_str = op.toJson();
+
+    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(final_json_str, "operatorId"), static_cast<int>(initial_id));
+    ASSERT_NE(final_json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
+    ASSERT_NE(final_json_str.find("\"outputConnections\":[]"), std::string::npos) << "outputConnections should be empty after randomInit(maxId). JSON: " << final_json_str;
+
+    std::vector<int> final_data_array = JsonTestHelpers::getJsonArrayIntValue(final_json_str, "data");
+    ASSERT_EQ(initial_data_array, final_data_array) << "Data array should not change.";
+    ASSERT_TRUE(final_data_array.empty()) << "Data array should remain empty.";
+}
+
+TEST_F(OutOperatorRandomInitTests, RandomInitIdRangeDoesNotAddConnections) {
+    OutOperator op(456);
+    MockRandomizer mr;
+    IdRange id_r(0, 0);
+    uint32_t initial_id = op.getId();
+
+    std::string initial_json_str = op.toJson();
+    std::vector<int> initial_data_array = JsonTestHelpers::getJsonArrayIntValue(initial_json_str, "data");
+
+    op.randomInit(&id_r, &mr);
+
+    std::string final_json_str = op.toJson();
+
+    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(final_json_str, "operatorId"), static_cast<int>(initial_id));
+    ASSERT_NE(final_json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
+    ASSERT_NE(final_json_str.find("\"outputConnections\":[]"), std::string::npos) << "outputConnections should be empty after randomInit(IdRange). JSON: " << final_json_str;
+
+    std::vector<int> final_data_array = JsonTestHelpers::getJsonArrayIntValue(final_json_str, "data");
+    ASSERT_EQ(initial_data_array, final_data_array) << "Data array should not change.";
+    ASSERT_TRUE(final_data_array.empty()) << "Data array should remain empty.";
 }
