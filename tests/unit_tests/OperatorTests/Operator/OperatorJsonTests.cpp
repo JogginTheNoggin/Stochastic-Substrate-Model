@@ -9,7 +9,7 @@
 class OperatorJsonTest : public ::testing::Test {};
 
 namespace {
-    std::string MOCK_FILE_DIR = "golden_files/operator/";
+    std::string MOCK_FILE_DIR = "../tests/unit_tests/golden_files/operator/";
 
 }
  

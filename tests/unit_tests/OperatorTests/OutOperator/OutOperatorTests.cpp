@@ -14,7 +14,7 @@
 
 // Anonymous namespace for helper functions specific to this test file
 namespace {
-    std::string MOCK_FILE_DIR = "golden_files/outOperator/";
+    std::string MOCK_FILE_DIR = "../tests/unit_tests/golden_files/outOperator/";
 
     char expectedCharFromInt(int value) {
         constexpr int INT_VALUE_BITS = std::numeric_limits<int>::digits;

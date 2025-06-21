@@ -11,7 +11,7 @@
 #include <filesystem>   // For checking file existence if needed (not strictly required by problem for read func)
 
 // Golden file directory (relative to build directory where tests run)
-const std::string MOCK_FILE_DIR = "golden_files/operator/";
+const std::string MOCK_FILE_DIR = "../tests/unit_tests/golden_files/operator/";
 
 // Helper function to read a binary file into a vector of bytes
 std::vector<std::byte> readBinaryGoldenFile(const std::string& relativePath) {
