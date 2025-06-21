@@ -1,0 +1,10 @@
+{
+  "opType": "OUT",
+  "operatorId": 456,
+  "outputDistanceBuckets": [],
+  "data": [
+    10,
+    20,
+    -5
+  ]
+}

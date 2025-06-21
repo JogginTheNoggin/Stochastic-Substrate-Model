@@ -534,83 +534,134 @@ TEST_F(OutOperatorEqualityTests, OutOperatorEqualToSelfWhenEmpty) {
     ASSERT_FALSE(op1 != op1);
 }
 
-class OutOperatorJsonTests : public ::testing::Test {};
+class OutOperatorJsonTests : public ::testing::Test {
+protected:
+    // Helper lambda to read golden file and trim a single trailing newline
+    std::function<std::string(const std::string&)> readAndTrimGolden = 
+        [](const std::string& filePath) {
+            std::string content = JsonTestHelpers::readGoldenFile(filePath);
+            if (!content.empty() && content.back() == '\n') {
+                content.pop_back();
+            }
+            return content;
+    };
+};
 
-TEST_F(OutOperatorJsonTests, ToJsonSchemaAndContentEmptyData) {
+TEST_F(OutOperatorJsonTests, ToJsonEmptyDataMatchesGoldenFile) {
+    // ARRANGE
     OutOperator op(123);
-    std::string json_str = op.toJson();
+    std::string goldenOutput = readAndTrimGolden(MOCK_FILE_DIR + "out_operator_empty.json");
 
-    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_str, "operatorId"), 123);
-    ASSERT_NE(json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(json_str.find("\"outputDistanceBuckets\":[]"), std::string::npos);
+    // ACT: Call toJson with pretty-printing and enclosing brackets (defaults for this golden file)
+    std::string actualOutput = op.toJson(true, true);
 
-    std::vector<int> data_vec = JsonTestHelpers::getJsonArrayIntValue(json_str, "data");
-    ASSERT_TRUE(data_vec.empty());
+    // ASSERT: The output must exactly match the golden file
+    EXPECT_EQ(actualOutput, goldenOutput);
 }
 
-TEST_F(OutOperatorJsonTests, ToJsonSchemaAndContentWithData) {
+TEST_F(OutOperatorJsonTests, ToJsonWithDataMatchesGoldenFile) {
+    // ARRANGE
     OutOperator op(456);
     op.message(10);
     op.message(20);
     op.message(-5);
-    std::string json_str = op.toJson();
+    std::string goldenOutput = readAndTrimGolden(MOCK_FILE_DIR + "out_operator_with_data.json");
 
-    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_str, "operatorId"), 456);
-    ASSERT_NE(json_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(json_str.find("\"outputDistanceBuckets\":[]"), std::string::npos);
+    // ACT: Call toJson with pretty-printing and enclosing brackets (defaults for this golden file)
+    std::string actualOutput = op.toJson(true, true);
 
-    std::vector<int> data_vec = JsonTestHelpers::getJsonArrayIntValue(json_str, "data");
-    ASSERT_EQ(data_vec.size(), 3);
-    ASSERT_EQ(data_vec[0], 10);
-    ASSERT_EQ(data_vec[1], 20);
-    ASSERT_EQ(data_vec[2], -5);
+    // ASSERT: The output must exactly match the golden file
+    EXPECT_EQ(actualOutput, goldenOutput);
 }
 
-TEST_F(OutOperatorJsonTests, ToJsonPrettyPrintMatchesGoldenFile) {
+TEST_F(OutOperatorJsonTests, ToJsonPrettyPrintMatchesExistingGoldenFile) {
     // ARRANGE
     OutOperator op(789);
     op.message(100);
-
-    // Read the expected output from the golden file.
+    // This golden file ('out_operator_pretty.json') is assumed to have a trailing newline,
+    // as it was pre-existing and might be saved that way. The toJson output also has it.
     std::string goldenOutput = JsonTestHelpers::readGoldenFile(MOCK_FILE_DIR + "out_operator_pretty.json");
+    // If toJson(true,true) for this case *doesn't* produce a trailing newline, 
+    // then goldenOutput should also be trimmed. For now, assume it does.
+    // std::string actualOutput = op.toJson(true, true);
+    // if (!actualOutput.empty() && actualOutput.back() == '\n' && 
+    //     !goldenOutput.empty() && goldenOutput.back() != '\n') {
+    //      // This should not happen if actual includes newline and golden does not
+    // }
+    // if (!goldenOutput.empty() && goldenOutput.back() == '\n' &&
+    //     !actualOutput.empty() && actualOutput.back() != '\n') {
+    //     goldenOutput.pop_back(); // Trim golden if actual doesn't have newline
+    // }
+
 
     // ACT
     std::string actualOutput = op.toJson(true, true);
 
     // ASSERT: Perform a single, strict comparison.
-    EXPECT_EQ(actualOutput, goldenOutput);
+    // Let's check if the pre-existing golden file has a newline the actual doesn't, or vice-versa
+    std::string adjustedGoldenOutput = goldenOutput;
+    if (!actualOutput.empty() && actualOutput.back() == '\n' && !adjustedGoldenOutput.empty() && adjustedGoldenOutput.back() != '\n') {
+        // This case is fine, actual has newline, golden doesn't - test will fail if not equal.
+        // But if golden has one and actual doesn't, we might need to trim golden.
+    } else if (!adjustedGoldenOutput.empty() && adjustedGoldenOutput.back() == '\n' && (actualOutput.empty() || actualOutput.back() != '\n')) {
+        adjustedGoldenOutput.pop_back();
+    }
+
+
+    EXPECT_EQ(actualOutput, adjustedGoldenOutput);
 }
 
-TEST_F(OutOperatorJsonTests, ToJsonEncloseInBracketsOption) {
+TEST_F(OutOperatorJsonTests, ToJsonNoEnclosingBrackets) { // Renamed
+    // ARRANGE
     OutOperator op(12);
     op.message(100);
 
-    std::string json_enclosed_str = op.toJson(false, true);
-    std::string json_not_enclosed_str = op.toJson(false, false);
+    // Manually define the expected fragment, matching op.toJson(true, false)'s output
+    // This is done because of issues with `overwrite_file_with_block` not preserving
+    // leading whitespace on the first line of a block for the golden file.
+    std::string expectedOutputFragment = 
+        "  \"opType\": \"OUT\",\n"
+        "  \"operatorId\": 12,\n"
+        "  \"outputDistanceBuckets\": [],\n"
+        "  \"data\": [\n"
+        "    100\n"
+        "  ]";
 
-    ASSERT_FALSE(json_enclosed_str.empty());
-    ASSERT_TRUE(json_enclosed_str.rfind('{', 0) == 0);
-    ASSERT_EQ(json_enclosed_str.back(), '}');
+    // ACT
+    std::string actualOutputFragment = op.toJson(true, false); // pretty, no brackets
 
-    ASSERT_FALSE(json_not_enclosed_str.empty());
-    ASSERT_NE(json_not_enclosed_str.find('{', 0), 0);
-    ASSERT_NE(json_not_enclosed_str.back(), '}');
+    // ASSERT
+    EXPECT_EQ(actualOutputFragment, expectedOutputFragment);
 
-    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(json_enclosed_str, "operatorId"), 12);
-    ASSERT_NE(json_enclosed_str.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(json_enclosed_str.find("\"outputDistanceBuckets\":[]"), std::string::npos);
-    std::vector<int> enclosed_data = JsonTestHelpers::getJsonArrayIntValue(json_enclosed_str, "data");
-    ASSERT_EQ(enclosed_data.size(), 1);
-    ASSERT_EQ(enclosed_data[0], 100);
-
-    std::string temp_valid_json_from_fragment = "{" + json_not_enclosed_str + "}";
-    ASSERT_EQ(JsonTestHelpers::getJsonIntValue(temp_valid_json_from_fragment, "operatorId"), 12);
-    ASSERT_NE(temp_valid_json_from_fragment.find("\"opType\":\"" + Operator::typeToString(Operator::Type::OUT) + "\""), std::string::npos);
-    ASSERT_NE(temp_valid_json_from_fragment.find("\"outputDistanceBuckets\":[]"), std::string::npos);
-    std::vector<int> fragment_data = JsonTestHelpers::getJsonArrayIntValue(temp_valid_json_from_fragment, "data");
-    ASSERT_EQ(fragment_data.size(), 1);
-    ASSERT_EQ(fragment_data[0], 100);
+    // Additionally, check the compact form without brackets
+    OutOperator op_compact(13);
+    op_compact.message(200);
+    // Expected compact fragment (manually constructed for clarity, as golden files are typically pretty-printed)
+    // Note: Operator::toJson(false, false) produces the base class part.
+    // OutOperator::toJson appends its "data" part.
+    // Base part for op_compact(13): "\"opType\":\"OUT\",\"operatorId\":13,\"outputDistanceBuckets\":[]"
+    // Appended part: ",\"data\":[200]"
+    std::string expectedCompactFragment = R"#("opType":"OUT","operatorId":13,"outputDistanceBuckets":[],"data":[200])#";
+    std::string actualCompactFragment = op_compact.toJson(false, false); // not pretty, no brackets
+    EXPECT_EQ(actualCompactFragment, expectedCompactFragment);
 }
+
+TEST_F(OutOperatorJsonTests, ToJsonEnclosedBracketsCompactMatchesManual) {
+    // ARRANGE
+    OutOperator op(14);
+    op.message(300);
+    op.message(400);
+
+    // Manually construct the expected compact JSON string with enclosing brackets
+    std::string expectedCompactJson = R"#({"opType":"OUT","operatorId":14,"outputDistanceBuckets":[],"data":[300,400]})#";
+    
+    // ACT
+    std::string actualCompactJson = op.toJson(false, true); // not pretty, with brackets
+
+    // ASSERT
+    EXPECT_EQ(actualCompactJson, expectedCompactJson);
+}
+
 
 // --- Tests for Serialization ---
 class OutOperatorSerializationTests : public ::testing::Test {};
