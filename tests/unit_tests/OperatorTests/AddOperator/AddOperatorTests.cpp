@@ -5,6 +5,8 @@
 #include "headers/Payload.h"           // Not directly used here
 #include "headers/UpdateEvent.h"       // Not directly used here
 #include "headers/util/Serializer.h"   // For Serializer::read_uint32 etc.
+#include "helpers/JsonTestHelpers.h"   // For readGoldenFile and getJsonIntValue
+
 #include <memory>                      // For std::unique_ptr
 #include <vector>                      // For std::vector
 #include <limits>                      // For std::numeric_limits
@@ -14,58 +16,10 @@
 #include <string>                      // Required for std::string
 #include <cstddef>                     // For std::byte
 
-// Helper function to extract integer value from JSON string
-// This is a simplified parser. A robust JSON library would be better for complex JSON.
-int getJsonIntValue(const std::string& json, const std::string& key) {
-    std::string search_key = "\"" + key + "\""; // e.g., "accumulateData"
-    size_t key_pos = json.find(search_key);
-    if (key_pos == std::string::npos) {
-        throw std::runtime_error("Key '" + key + "' not found in JSON: " + json);
-    }
-
-    size_t colon_pos = json.find(':', key_pos + search_key.length());
-    if (colon_pos == std::string::npos) {
-        throw std::runtime_error("Colon not found after key '" + key + "' in JSON: " + json);
-    }
-
-    size_t value_start_pos = colon_pos + 1;
-    while (value_start_pos < json.length() && isspace(json[value_start_pos])) {
-        value_start_pos++;
-    }
-
-    if (value_start_pos >= json.length()) {
-        throw std::runtime_error("Value not found for key '" + key + "' in JSON: " + json);
-    }
-
-    size_t value_end_pos = value_start_pos;
-    while (value_end_pos < json.length() && (isdigit(json[value_end_pos]) || json[value_end_pos] == '-')) {
-        value_end_pos++;
-    }
-
-    std::string value_str = json.substr(value_start_pos, value_end_pos - value_start_pos);
-    if (value_str.empty()) {
-        throw std::runtime_error("Empty value for key '" + key + "' in JSON: " + json);
-    }
-
-    try {
-        return std::stoi(value_str);
-    } catch (const std::invalid_argument& ia) {
-        throw std::runtime_error("Invalid argument to stoi for key '" + key + "' with value '" + value_str + "' in JSON: " + json);
-    } catch (const std::out_of_range& oor) {
-        throw std::runtime_error("Out of range for stoi for key '" + key + "' with value '" + value_str + "' in JSON: " + json);
-    }
-}
-
-// Helper function to check if a string starts with a prefix
-bool startsWith(const std::string& text, const std::string& prefix) {
-    return text.rfind(prefix, 0) == 0;
-}
-
-// Helper function to check if a string ends with a suffix
-bool endsWith(const std::string& text, const std::string& suffix) {
-    if (text.length() < suffix.length()) return false;
-    return text.compare(text.length() - suffix.length(), suffix.length(), suffix) == 0;
-}
+namespace {
+    // Define the directory for AddOperator specific golden files
+    std::string ADD_OPERATOR_GOLDEN_FILE_DIR = "golden_files/AddOperator/";
+} // namespace
 
 // Test fixture for AddOperator constructor tests
 class AddOperatorConstructorTest : public ::testing::Test {
@@ -73,7 +27,7 @@ protected:
     // Helper to get accumulateData from an AddOperator instance via toJson
     int getAccumulateDataLocal(const AddOperator& op) {
         // toJson(prettyPrint=false, encloseInBrackets=true)
-        return getJsonIntValue(op.toJson(false, true), "accumulateData");
+        return JsonTestHelpers::getJsonIntValue(op.toJson(false, true), "accumulateData");
     }
 };
 
@@ -126,7 +80,7 @@ protected:
         if (!op) { // Should not happen if SetUp is correct
             throw std::runtime_error("Operator 'op' is null in getAccumulateDataConfiguredOp.");
         }
-        return getJsonIntValue(op->toJson(false, true), "accumulateData");
+        return JsonTestHelpers::getJsonIntValue(op->toJson(false, true), "accumulateData");
     }
 };
 
@@ -501,7 +455,7 @@ protected:
     // Helper to get accumulateData from an AddOperator instance via toJson
     int getAccumulateData(const AddOperator& op) {
         // toJson(prettyPrint=false, encloseInBrackets=true)
-        return getJsonIntValue(op.toJson(false, true), "accumulateData");
+        return JsonTestHelpers::getJsonIntValue(op.toJson(false, true), "accumulateData");
     }
 };
 
@@ -588,93 +542,50 @@ TEST_F(AddOperatorEqualityTest, Equals_DifferentConnections) {
 // Tests for toJson(bool prettyPrint, bool encloseInBrackets)
 
 TEST_F(AddOperatorTest, ToJson_BasicStructureAndContent_NoPretty_Enclosed) {
-    op->message(77); // Change accumulateData for test
-    std::string jsonOutput = op->toJson(false, true);
-
-    // Check for enclosing brackets
-    EXPECT_TRUE(startsWith(jsonOutput, "{"));
-    EXPECT_TRUE(endsWith(jsonOutput, "}"));
-
-    // Check for base class keys (presence only, values tested in OperatorJsonTests)
-    EXPECT_NE(jsonOutput.find("\"opType\":\"ADD\""), std::string::npos);
-    EXPECT_NE(jsonOutput.find("\"operatorId\":" + std::to_string(operatorId)), std::string::npos);
-    EXPECT_NE(jsonOutput.find("\"outputDistanceBuckets\":["), std::string::npos);
-
-    // Check for AddOperator specific keys and values
-    EXPECT_NE(jsonOutput.find("\"weight\":" + std::to_string(initialWeight)), std::string::npos);
-    EXPECT_NE(jsonOutput.find("\"threshold\":" + std::to_string(initialThreshold)), std::string::npos);
-    EXPECT_NE(jsonOutput.find("\"accumulateData\":77"), std::string::npos);
+    op->message(77); // Set accumulateData to 77
+    std::string actualJson = op->toJson(false, true);
+    // For initial setup, operatorId=100, initialWeight=10, initialThreshold=5
+    // Golden file content: {"opType":"ADD","operatorId":100,"outputDistanceBuckets":[],"weight":10,"threshold":5,"accumulateData":77}
+    std::string goldenJson = JsonTestHelpers::readGoldenFile(ADD_OPERATOR_GOLDEN_FILE_DIR + "add_operator_basic_no_pretty_enclosed.json");
+    EXPECT_EQ(actualJson, goldenJson);
 }
 
 TEST_F(AddOperatorTest, ToJson_PrettyPrint_Enclosed) {
-    op->message(88);
-    std::string jsonOutput = op->toJson(true, true);
-
-    EXPECT_TRUE(startsWith(jsonOutput, "{"));
-    EXPECT_TRUE(endsWith(jsonOutput, "\n}")); // Pretty print adds newline before closing bracket
-
-    // Check for newlines and spaces (indicators of pretty printing)
-    EXPECT_NE(jsonOutput.find("\n"), std::string::npos);
-    EXPECT_NE(jsonOutput.find("  "), std::string::npos); // Typical indentation
-
-    // Verify essential AddOperator data is still present
-    EXPECT_NE(jsonOutput.find("\"weight\": " + std::to_string(initialWeight)), std::string::npos); // Note space for pretty print
-    EXPECT_NE(jsonOutput.find("\"threshold\": " + std::to_string(initialThreshold)), std::string::npos);
-    EXPECT_NE(jsonOutput.find("\"accumulateData\": 88"), std::string::npos);
+    op->message(88); // Set accumulateData to 88
+    std::string actualJson = op->toJson(true, true);
+    // Golden file content:
+    // {
+    //   "opType": "ADD",
+    //   "operatorId": 100,
+    //   "outputDistanceBuckets": [],
+    //   "weight": 10,
+    //   "threshold": 5,
+    //   "accumulateData": 88
+    // }
+    std::string goldenJson = JsonTestHelpers::readGoldenFile(ADD_OPERATOR_GOLDEN_FILE_DIR + "add_operator_pretty_enclosed.json");
+    EXPECT_EQ(actualJson, goldenJson);
 }
 
 TEST_F(AddOperatorTest, ToJson_NoPretty_NotEnclosed) {
-    op->message(99);
-    std::string jsonOutput = op->toJson(false, false);
-
-    // Check NOT enclosed
-    EXPECT_FALSE(startsWith(jsonOutput, "{"));
-    EXPECT_FALSE(endsWith(jsonOutput, "}"));
-
-    // Check for base class keys (presence only)
-    // Base class toJson(false, false) produces: "opType":"ADD","operatorId":id,"outputDistanceBuckets":[]
-    // AddOperator appends: ,"weight":w,"threshold":t,"accumulateData":a
-    std::string expectedStartSequence = "\"opType\":\"ADD\",\"operatorId\":" + std::to_string(operatorId);
-    EXPECT_TRUE(startsWith(jsonOutput, expectedStartSequence));
-
-    // Verify AddOperator data
-    EXPECT_NE(jsonOutput.find(",\"weight\":" + std::to_string(initialWeight)), std::string::npos);
-    EXPECT_NE(jsonOutput.find(",\"threshold\":" + std::to_string(initialThreshold)), std::string::npos);
-    EXPECT_NE(jsonOutput.find(",\"accumulateData\":99"), std::string::npos);
-
-    // Ensure no newlines from pretty printing
-    EXPECT_EQ(jsonOutput.find("\n"), std::string::npos);
+    op->message(99); // Set accumulateData to 99
+    std::string actualJson = op->toJson(false, false);
+    // Golden file content: "opType":"ADD","operatorId":100,"outputDistanceBuckets":[],"weight":10,"threshold":5,"accumulateData":99
+    std::string goldenJson = JsonTestHelpers::readGoldenFile(ADD_OPERATOR_GOLDEN_FILE_DIR + "add_operator_no_pretty_not_enclosed.json");
+    EXPECT_EQ(actualJson, goldenJson);
 }
 
 TEST_F(AddOperatorTest, ToJson_Pretty_NotEnclosed) {
-    op->message(111);
-    std::string jsonOutput = op->toJson(true, false);
-
-    // Check NOT enclosed
-    EXPECT_FALSE(startsWith(jsonOutput, "{"));
-    EXPECT_FALSE(endsWith(jsonOutput, "}")); // More specific: should not end with \n}
-    EXPECT_FALSE(endsWith(jsonOutput, "\n}"));
-
-
-    // Check for newlines and spaces (indicators of pretty printing)
-    EXPECT_NE(jsonOutput.find("\n"), std::string::npos);
-    EXPECT_NE(jsonOutput.find("  "), std::string::npos);
-
-    // Base class toJson(true, false) produces: (e.g.)
+    op->message(111); // Set accumulateData to 111
+    std::string actualJson = op->toJson(true, false);
+    // Golden file content:
     //   "opType": "ADD",
     //   "operatorId": 100,
-    //   "outputDistanceBuckets": []
-    // AddOperator appends: (e.g.)
-    // ,
+    //   "outputDistanceBuckets": [],
     //   "weight": 10,
     //   "threshold": 5,
     //   "accumulateData": 111
-    // So, it should start with some indentation or opType directly if base doesn't indent when not enclosed.
-    // Let's check for key parts with pretty print spacing.
-    EXPECT_NE(jsonOutput.find("\"opType\": \"ADD\""), std::string::npos);
-    EXPECT_NE(jsonOutput.find(",\n  \"weight\": " + std::to_string(initialWeight)), std::string::npos);
-    EXPECT_NE(jsonOutput.find(",\n  \"threshold\": " + std::to_string(initialThreshold)), std::string::npos);
-    EXPECT_NE(jsonOutput.find(",\n  \"accumulateData\": 111"), std::string::npos);
+    std::string goldenJson = JsonTestHelpers::readGoldenFile(ADD_OPERATOR_GOLDEN_FILE_DIR + "add_operator_pretty_not_enclosed.json");
+    EXPECT_EQ(actualJson, goldenJson);
 }
 
 // Test fixture for AddOperator serialization/deserialization tests
@@ -682,7 +593,7 @@ class AddOperatorSerializationTest : public ::testing::Test {
 protected:
     // Helper to get accumulateData from an AddOperator instance via toJson
     int getAccumulateData(const AddOperator& op) {
-        return getJsonIntValue(op.toJson(false, true), "accumulateData");
+        return JsonTestHelpers::getJsonIntValue(op.toJson(false, true), "accumulateData");
     }
 
     void compareOperators(const AddOperator& op1, const AddOperator& op2) {
