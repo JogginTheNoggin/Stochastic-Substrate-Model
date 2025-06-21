@@ -18,7 +18,7 @@
 
 namespace {
     // Define the directory for AddOperator specific golden files
-    std::string ADD_OPERATOR_GOLDEN_FILE_DIR = "golden_files/AddOperator/";
+    std::string ADD_OPERATOR_GOLDEN_FILE_DIR = "tests/unit_tests/OperatorTests/AddOperator/golden_files/";
 } // namespace
 
 // Test fixture for AddOperator constructor tests
