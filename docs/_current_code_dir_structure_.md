@@ -48,7 +48,6 @@
     - Randomizer.h
     - Serializer.h
 - main.cpp
-- unit_tests/
 
 ## `tests/`
 - Testing/
@@ -59,6 +58,7 @@
   - OperatorTests/
     - AddOperator/
       - AddOperatorTests.cpp
+      - golden_files/
     - InOperator/
       - InOperatorTests.cpp
     - Operator/
@@ -84,6 +84,32 @@
       - PayloadTests.cpp
     - Serializer/
       - SerializerTests.cpp
+  - golden_files/
+    - addOperator/
+      - add_operator_basic_no_pretty_enclosed.json
+      - add_operator_no_pretty_not_enclosed.json
+      - add_operator_pretty_enclosed.json
+      - add_operator_pretty_not_enclosed.json
+    - inOperator/
+      - in_operator_constructor_id0.json
+      - in_operator_constructor_id1.json
+      - in_operator_constructor_id123.json
+      - in_operator_constructor_id_max_int.json
+      - in_operator_id2_acc_10_neg20.json
+      - in_operator_id3_acc_5_no_conn.json
+    - operator/
+      - operator_multi_conn_multi_dist.json
+      - operator_multi_conn_same_dist.json
+      - operator_no_connections.json
+      - operator_one_connection.json
+      - operator_serialize_multi_conn_multi_dist.bin
+      - operator_serialize_multi_conn_same_dist.bin
+      - operator_serialize_no_connections.bin
+      - operator_serialize_one_connection.bin
+    - outOperator/
+      - out_operator_empty.json
+      - out_operator_pretty.json
+      - out_operator_with_data.json
   - helpers/
     - JsonTestHelpers.h
     - MockRandomizer.h

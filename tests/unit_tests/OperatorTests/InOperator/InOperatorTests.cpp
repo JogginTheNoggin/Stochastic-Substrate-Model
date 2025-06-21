@@ -18,7 +18,7 @@
 
 // Define the golden file directory relative to where the tests are run (build folder)
 namespace {
-    const std::string GOLDEN_FILES_DIR = "../tests/unit_tests/golden_files/inOperator/";
+    const std::string GOLDEN_FILES_DIR = "../tests/unit_tests/OperatorTests/InOperator/golden_files/";
 }
 
 // Helper function to compare two vectors of integers
