@@ -43,7 +43,7 @@ class OperatorSerializeTest : public ::testing::Test {
 TEST_F(OperatorSerializeTest, SerializeNoConnections) {
     auto op = std::make_unique<TestOperator>(123); // TestOperator ID 123
 
-    std::vector<std::byte> actualBytes = op->serializeToBytes(); // Calls Operator::serializeToBytes
+    std::vector<std::byte> actualBytes = op->baseClassSerializeToBytes(); // Calls Operator::serializeToBytes
 
     std::string goldenFilePath = MOCK_FILE_DIR + "operator_serialize_no_connections.bin";
     std::vector<std::byte> expectedBytes = readBinaryGoldenFile(goldenFilePath);
@@ -55,7 +55,7 @@ TEST_F(OperatorSerializeTest, SerializeOneConnection) {
     auto op = std::make_unique<TestOperator>(124); // TestOperator ID 124
     op->addConnectionInternal(200, 2); // Target 200, distance 2
 
-    std::vector<std::byte> actualBytes = op->serializeToBytes();
+    std::vector<std::byte> actualBytes = op->baseClassSerializeToBytes();
 
     std::string goldenFilePath = MOCK_FILE_DIR + "operator_serialize_one_connection.bin";
     std::vector<std::byte> expectedBytes = readBinaryGoldenFile(goldenFilePath);
@@ -69,7 +69,7 @@ TEST_F(OperatorSerializeTest, SerializeMultipleConnectionsSameDistance) {
     op->addConnectionInternal(301, 1);
     op->addConnectionInternal(300, 1);
 
-    std::vector<std::byte> actualBytes = op->serializeToBytes();
+    std::vector<std::byte> actualBytes = op->baseClassSerializeToBytes();
 
     std::string goldenFilePath = MOCK_FILE_DIR + "operator_serialize_multi_conn_same_dist.bin";
     std::vector<std::byte> expectedBytes = readBinaryGoldenFile(goldenFilePath);
@@ -85,7 +85,7 @@ TEST_F(OperatorSerializeTest, SerializeMultipleConnectionsDifferentDistances) {
     op->addConnectionInternal(400, 0);
 
 
-    std::vector<std::byte> actualBytes = op->serializeToBytes();
+    std::vector<std::byte> actualBytes = op->baseClassSerializeToBytes();
 
     std::string goldenFilePath = MOCK_FILE_DIR + "operator_serialize_multi_conn_multi_dist.bin";
     std::vector<std::byte> expectedBytes = readBinaryGoldenFile(goldenFilePath);

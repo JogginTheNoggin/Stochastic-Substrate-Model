@@ -656,17 +656,20 @@ TEST_F(LayerTest, SerializeDeserializeEmptyLayer) {
     EXPECT_EQ(*deserialized_layer, *original_layer); // Uses operator== for deep comparison
 }
 
+
+// TODO add support to use MOCK Operator and MOCK Layer
+// layer.cpp, does not support MOCK operator creation. 
 TEST_F(LayerTest, SerializeDeserializeLayerWithOperators) {
     // ARRANGE: Create a layer with a few operators and connections.
     auto original_layer = createTestLayer(LayerType::INTERNAL_LAYER, 100, 120, false); 
     
-    TestOperator* op1 = createTestOperator(101);
+    AddOperator* op1 = new AddOperator(101);//createTestOperator(101);
     op1->addConnectionInternal(105, 1);
     original_layer->addNewOperator(op1);
 
-    TestOperator* op2 = createTestOperator(102);
+    AddOperator* op2 = new AddOperator(102);//createTestOperator(102);
     original_layer->addNewOperator(op2);
-    TestOperator* op3 = createTestOperator(110); 
+    AddOperator* op3 = new AddOperator(110); 
     op3->addConnectionInternal(101, 2);
     original_layer->addNewOperator(op3);
 

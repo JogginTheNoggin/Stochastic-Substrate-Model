@@ -375,7 +375,8 @@ std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets, int inden
  * @details This virtual method is intended to be called by derived class overrides. It serializes
  * the Type, ID, and connection data, which is common to all Operator types. The connections are serialized 
  * in sorted order for deterministic output and repeatabilitiy.
- * @note DOES NOT PROVIDE BYTE SIZE OF SERIALIZATION
+ * @note !!!! DOES NOT PROVIDE BYTE SIZE OF SERIALIZATION !!! 
+ * MEANING ANY SUBCLASSES MUST PROVIDED THIS INFORMATION INORDER TO WORK PROPERLY
  */
 std::vector<std::byte> Operator::serializeToBytes() const {
     // Purpose: Serialize the base Operator fields into a byte vector without a size prefix.

@@ -117,9 +117,37 @@ public:
         return Operator::equals(other);
     }
 
-    // This override calls the base class implementation directly,
-    // allowing us to test Operator::serializeToBytes without any subclass interference.
+    // --- Correct Serialization Implementation ---
+
+    /**
+     * @brief [Override] Serializes the TestOperator to a self-contained, size-prefixed block.
+     * @return A std::vector<std::byte> containing the full serialized object.
+     * @details This method follows the correct pattern for subclass serialization:
+     * 1. Call the base class Operator::serializeToBytes to get the raw data (no prefix).
+     * 2. Append any derived-class-specific data (none for this test class).
+     * 3. Prepend the final total size of the data block as a 4-byte prefix.
+     */
     std::vector<std::byte> serializeToBytes() const override {
+        // 1. Get the raw serialized data from the base Operator class.
+        // no byte size prefix
+        std::vector<std::byte> dataBuffer = Operator::serializeToBytes();
+
+        // 2. A real subclass would append its own data here. TestOperator has none.
+
+        // 3. Create the final buffer and prepend the 4-byte size of the data payload.
+        std::vector<std::byte> finalBuffer;
+        finalBuffer.reserve(4 + dataBuffer.size());
+        Serializer::write(finalBuffer, static_cast<uint32_t>(dataBuffer.size()));
+        finalBuffer.insert(finalBuffer.end(), dataBuffer.begin(), dataBuffer.end());
+
+        return finalBuffer;
+    }
+
+    /**
+     * @brief for checking the validing of base operator class serializer, without byte size prefix that subclass will append
+     * @return A std::vector<std::byte> containing the serialized object, without byte size prefix.
+     */
+    std::vector<std::byte> baseClassSerializeToBytes() const {
         return Operator::serializeToBytes();
     }
     
