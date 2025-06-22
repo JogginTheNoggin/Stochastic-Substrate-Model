@@ -289,25 +289,27 @@ std::string Operator::typeToString(Operator::Type type) {
  * @brief Generates a JSON string representation of the base Operator's state.
  * @param prettyPrint If true, format the JSON with indentation and newlines.
  * @param encloseInBrackets If true, wraps the output in {}. Allows derived classes to embed this content.
+ * @param indentLevel The current level of indentation for pretty-printing.
  * @return std::string A JSON formatted string of the base operator's properties.
- * @note Key Logic Steps: Constructs a JSON object string. Includes "operatorId" and "outputDistanceBuckets". The `encloseInBrackets` flag allows for composition by derived classes.
+ * @note Key Logic Steps: Constructs a JSON object string based on the provided indent level. Includes "operatorId" and "outputDistanceBuckets".
  */
-std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets) const {
+std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets, int indentLevel) const {
     std::ostringstream oss;
     
-    std::string base_indent = prettyPrint ? "  " : "";
-    std::string deeper_indent = prettyPrint ? base_indent + "  " : "";
-    std::string deepest_indent = prettyPrint ? deeper_indent + "  " : ""; // Indent for array elements
+    std::string base_indent = prettyPrint ? std::string(indentLevel * 2, ' ') : "";
+    std::string deeper_indent = prettyPrint ? std::string((indentLevel + 1) * 2, ' ') : "";
+    std::string deepest_indent = prettyPrint ? std::string((indentLevel + 2) * 2, ' ') : "";
+    std::string even_deeper_indent = prettyPrint ? std::string((indentLevel + 3) * 2, ' ') : "";
     std::string newline = prettyPrint ? "\n" : "";
     std::string space = prettyPrint ? " " : "";
 
     if (encloseInBrackets) {
-        oss << "{" << newline;
+        oss << base_indent << "{" << newline;
     }
 
-    oss << base_indent << "\"opType\":" << space << "\"" << Operator::typeToString(this->getOpType()) << "\"," << newline;
-    oss << base_indent << "\"operatorId\":" << space << this->operatorId << "," << newline;
-    oss << base_indent << "\"outputDistanceBuckets\":" << space << "[";
+    oss << deeper_indent << "\"opType\":" << space << "\"" << Operator::typeToString(this->getOpType()) << "\"," << newline;
+    oss << deeper_indent << "\"operatorId\":" << space << this->operatorId << "," << newline;
+    oss << deeper_indent << "\"outputDistanceBuckets\":" << space << "[";
 
     std::vector<std::pair<int, const std::unordered_set<uint32_t>*>> sortedBuckets;
     for (int d = 0; d <= this->outputConnections.maxIdx(); ++d) {
@@ -318,16 +320,19 @@ std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets) const {
     }
     std::sort(sortedBuckets.begin(), sortedBuckets.end(), [](const auto& a, const auto& b){ return a.first < b.first; });
 
+    if (!sortedBuckets.empty()) {
+        oss << newline;
+    }
+
     for (size_t i = 0; i < sortedBuckets.size(); ++i) {
         const auto& pair = sortedBuckets[i];
         int distance = pair.first;
         const auto& bucket = *pair.second;
         
-        oss << newline << deeper_indent << "{" << newline;
-        oss << deeper_indent << "  \"distance\":" << space << distance << "," << newline;
-        oss << deeper_indent << "  \"targetOperatorIds\":" << space << "[";
+        oss << deepest_indent << "{" << newline;
+        oss << even_deeper_indent << "\"distance\":" << space << distance << "," << newline;
+        oss << even_deeper_indent << "\"targetOperatorIds\":" << space << "[";
 
-        // --- START OF CORRECTED LOGIC FOR NESTED ARRAY ---
         if (prettyPrint && !bucket.empty()) {
             oss << newline;
             
@@ -335,9 +340,9 @@ std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets) const {
             std::sort(sortedTargets.begin(), sortedTargets.end());
 
             for (size_t j = 0; j < sortedTargets.size(); ++j) {
-                oss << deepest_indent << "  " << sortedTargets[j] << (j == sortedTargets.size() - 1 ? "" : ",") << newline;
+                oss << even_deeper_indent << "  " << sortedTargets[j] << (j == sortedTargets.size() - 1 ? "" : ",") << newline;
             }
-            oss << deeper_indent << "  ";
+            oss << even_deeper_indent;
 
         } else { // Compact version of the nested array
             std::vector<uint32_t> sortedTargets(bucket.begin(), bucket.end());
@@ -346,19 +351,18 @@ std::string Operator::toJson(bool prettyPrint, bool encloseInBrackets) const {
                 oss << sortedTargets[j] << (j == sortedTargets.size() - 1 ? "" : ",");
             }
         }
-        // --- END OF CORRECTED LOGIC ---
 
         oss << "]" << newline;
-        oss << deeper_indent << "}" << (i == sortedBuckets.size() - 1 ? "" : ",");
+        oss << deepest_indent << "}" << (i == sortedBuckets.size() - 1 ? "" : ",") << newline;
     }
 
     if (!sortedBuckets.empty()) {
-        oss << newline << base_indent;
+        oss << deeper_indent;
     }
     oss << "]";
 
     if (encloseInBrackets) {
-        oss << newline << "}";
+        oss << newline << base_indent << "}";
     }
 
     return oss.str();

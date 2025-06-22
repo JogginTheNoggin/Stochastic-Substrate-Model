@@ -121,10 +121,11 @@ public:
      * @brief Generates a JSON string representation of the Operator's state.
      * @param prettyPrint If true, format the JSON with indentation and newlines for readability.
      * @param encloseInBrackets If true (default), wraps the entire output in curly braces `{}` making it a complete JSON object. If false, omits the braces, allowing other classes to embed this content.
+     * @param indentLevel The current level of indentation (number of indent steps) for pretty-printing.
      * @return std::string A string containing the Operator's state formatted as JSON.
      * @note Key Logic Steps: Constructs a JSON object string by calling the base class `toJson` method to get common properties, then appending its own specific properties like "weight", "threshold", and "accumulateData".
      */
-    std::string toJson(bool prettyPrint = false, bool encloseInBrackets = true) const override;
+    std::string toJson(bool prettyPrint = false, bool encloseInBrackets = true, int indentLevel = 0) const override;
 
 
     void changeParams(const std::vector<int>& params) override; // TODO may not want method to be of const type 

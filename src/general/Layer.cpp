@@ -76,10 +76,7 @@ void Layer::deserialize(const std::byte*& data, const std::byte* dataEnd){
     int fileMaxId = Serializer::read_uint32(data, dataEnd);
     reservedRange = new IdRange(fileMinId, fileMaxId); // IdRange constructor calls validate()
 
-    // setting the defaults to both the max and min is so that any newly added operator
-    // within accepted range, will replace both values, without having to perform addition checks for default cases
-    currentMinId = std::numeric_limits<uint32_t>::max(); // ad
-    currentMaxId = 0; // 0 case must 
+    
 
     while (data < dataEnd) {
         uint32_t opPayloadSize = Serializer::read_uint32(data, dataEnd);
@@ -206,7 +203,7 @@ void Layer::updateMinMaxIds(uint32_t operatorId){
 
     if(operatorId > currentMaxId){
         currentMaxId = operatorId;
-        if(!isRangeFinal){
+        if(!isRangeFinal && operatorId > reservedRange->getMaxId()){
             reservedRange->setMaxId(currentMaxId); // update range if the layer is not final, can increase
         }
     }
@@ -513,12 +510,13 @@ void Layer::deleteOperator(uint32_t targetOperatorId) {  // TODO temporary, meth
     // If the operator was not found in this layer, do nothing.
 }
 
-
+// TODO maybe add enclosed bool option for allow subclass layers to append own layer specific data after the base class layer data.  
 std::string Layer::toJson(bool prettyPrint) const{
     std::ostringstream oss;
     std::string indent = prettyPrint ? "  " : "";
     std::string newline = prettyPrint ? "\n" : "";
     std::string space = prettyPrint ? " " : "";
+    int opIndentLevel = prettyPrint? 2 : 0; // for proper nesting of operators json
 
     oss << "{" << newline;
 
@@ -536,30 +534,31 @@ std::string Layer::toJson(bool prettyPrint) const{
     oss << indent << "\"operatorCount\":" << space << this->operators.size() << "," << newline;
     
     // --- Operators Array ---
-    oss << indent << "\"operators\":" << space << "[" << newline;
-
-    // Sort operators by ID for deterministic JSON output
-    std::vector<const Operator*> sortedOps;
-    sortedOps.reserve(operators.size());
-    for (const auto& pair : operators) {
-        sortedOps.push_back(pair.second);
-    }
-    std::sort(sortedOps.begin(), sortedOps.end(), 
-              [](const Operator* a, const Operator* b){ return a->getId() < b->getId(); });
-
-    bool firstOp = true;
-    for (const auto* op : sortedOps) {
-        if (!firstOp) {
-            oss << "," << newline;
+    oss << indent << "\"operators\":" << space << "[";
+    if(!operators.empty()){ // only create newline if array not empty/has operator/s
+        oss << newline; // open bracket
+    
+        // Sort operators by ID for deterministic JSON output
+        std::vector<const Operator*> sortedOps;
+        sortedOps.reserve(operators.size());
+        for (const auto& pair : operators) {
+            sortedOps.push_back(pair.second);
         }
-        if (prettyPrint) {
-             oss << indent << indent;
-        }
-        oss << op->toJson(prettyPrint, true);
-        firstOp = false;
-    }
+        std::sort(sortedOps.begin(), sortedOps.end(), 
+                [](const Operator* a, const Operator* b){ return a->getId() < b->getId(); });
 
-    oss << newline << indent << "]" << newline; // End of operators array
+        bool firstOp = true;
+        for (const auto* op : sortedOps) {
+            if (!firstOp) {
+                oss << "," << newline;
+            }
+            
+            oss << op->toJson(prettyPrint, true, opIndentLevel); // print operator and indent by 1
+            firstOp = false;
+        }
+        oss << newline << indent; // end bracket on newline and indent
+    }
+    oss << "]" << newline; // End of operators array
     oss << "}"; // End of layer object
 
     return oss.str();

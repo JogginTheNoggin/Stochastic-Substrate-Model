@@ -23,6 +23,27 @@
       "preLaunchTask": "build"
     },
     {
+      "name": "Debug LayerTests_Layer.exe",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/AthenaTests/LayerTests_Layer.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/AthenaTests",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
       "name": "Debug OperatorTests_AddOperator.exe",
       "type": "cppdbg",
       "request": "launch",

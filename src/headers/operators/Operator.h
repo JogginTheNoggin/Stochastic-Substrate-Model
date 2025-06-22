@@ -168,10 +168,11 @@ public:
      * @brief Generates a JSON string representation of the Operator's state.
      * @param prettyPrint If true, format the JSON with indentation and newlines for readability.
      * @param encloseInBrackets If true (default), wraps the entire output in curly braces `{}` making it a complete JSON object. If false, omits the braces, allowing derived classes to embed this content.
+     * @param indentLevel The current level of indentation (number of indent steps) for pretty-printing.
      * @return std::string A string containing the Operator's state formatted as JSON.
      * @note When called with `encloseInBrackets=false`, the returned string will NOT have a trailing comma. The derived class is responsible for adding it if needed.
      */
-    virtual std::string toJson(bool prettyPrint = false, bool encloseInBrackets = true) const;
+    virtual std::string toJson(bool prettyPrint = false, bool encloseInBrackets = true, int indentLevel = 0) const;
     
     
     

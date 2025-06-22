@@ -1,0 +1,28 @@
+{
+  "layerType": "2",
+  "isRangeFinal": false,
+  "reservedRange": {
+    "minId": 100,
+    "maxId": 110
+  },
+  "operatorCount": 2,
+  "operators": [
+    {
+      "opType": "UNDEFINED",
+      "operatorId": 101,
+      "outputDistanceBuckets": [
+        {
+          "distance": 1,
+          "targetOperatorIds": [
+            105
+          ]
+        }
+      ]
+    },
+    {
+      "opType": "UNDEFINED",
+      "operatorId": 102,
+      "outputDistanceBuckets": []
+    }
+  ]
+}

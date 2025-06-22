@@ -24,6 +24,14 @@ public:
     TestLayer(LayerType type, IdRange* range, bool isRangeFinal)
         : Layer(type, range, isRangeFinal) {}
 
+    // NEW: Deserialization constructor for testing
+    TestLayer(LayerType type, bool isRangeFinal, const std::byte*& data, const std::byte* dataEnd)
+        : Layer(type, isRangeFinal) {
+        // This constructor calls the protected Layer constructor and then
+        // calls the protected deserialize method to populate the object.
+        deserialize(data, dataEnd);
+    }
+
     /**
      * @brief Provides a minimal implementation for the pure virtual method from the base class.
      * @details The body is intentionally empty because we do not need to test random
@@ -42,5 +50,22 @@ public:
      */
     bool equals(const Layer& other) const override {
         return Layer::equals(other);
+    }
+
+     /**
+     * @brief [Public for Testing] Exposes the protected deserialize method for testing purposes.
+     * @param data Pointer to the byte stream data.
+     * @param dataEnd Pointer to the end of the byte stream data.
+     */
+    void test_deserialize(const std::byte*& data, const std::byte* dataEnd) {
+        // This public method calls the protected base class method.
+        // It's specifically for allowing white-box testing of deserialization.
+        Layer::deserialize(data, dataEnd);
+    }
+
+
+    // Access the protected method for testing
+    uint32_t generateNextId(){
+        return Layer::generateNextId(); 
     }
 };

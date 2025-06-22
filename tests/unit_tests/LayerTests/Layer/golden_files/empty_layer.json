@@ -1,0 +1,10 @@
+{
+  "layerType": "0",
+  "isRangeFinal": true,
+  "reservedRange": {
+    "minId": 0,
+    "maxId": 10
+  },
+  "operatorCount": 0,
+  "operators": []
+}

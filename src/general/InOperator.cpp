@@ -191,36 +191,48 @@ bool InOperator::equals(const Operator& other) const {
     return Operator::equals(other);
 }
 
-std::string InOperator::toJson(bool prettyPrint, bool encloseInBrackets) const{
+/**
+ * @brief Generates a JSON string representation of the InOperator's state.
+ * @param prettyPrint If true, format the JSON for human readability.
+ * @param encloseInBrackets If true, wrap the entire output in curly braces.
+ * @param indentLevel The current level of indentation for pretty-printing.
+ * @return A string containing the Operator's state formatted as JSON.
+ */
+std::string InOperator::toJson(bool prettyPrint, bool encloseInBrackets, int indentLevel) const { // 
     std::ostringstream oss;
-    std::string indent = prettyPrint ? "  " : "";
+
+    std::string current_indent = prettyPrint ? std::string(indentLevel * 2, ' ') : "";
+    std::string inner_indent = prettyPrint ? std::string((indentLevel + 1) * 2, ' ') : "";
     std::string newline = prettyPrint ? "\n" : "";
     std::string space = prettyPrint ? " " : "";
 
     if (encloseInBrackets) {
-        oss << "{" << newline;
+        oss << current_indent << "{" << newline;
     }
 
-    // Get base class JSON content (without brackets)
-    oss << Operator::toJson(prettyPrint, false);
-    
-    // Add comma to separate base content from derived content
+    // Get base class JSON content as a fragment, passing the current indentLevel.
+    std::string baseJson = Operator::toJson(prettyPrint, false, indentLevel);
+    oss << baseJson;
+
+    // Add a comma to separate base content from derived content
     oss << "," << newline;
 
-    // Add derived class properties
-    oss << indent << "\"accumulatedData\":" << space << "[";
+    // Add derived class properties, correctly indented.
+    oss << inner_indent << "\"accumulatedData\":" << space << "[";
+    
     bool first = true;
-    for(const auto& data : accumulatedData) {
+    for (const auto& data : accumulatedData) {
         if (!first) {
             oss << "," << space;
         }
         oss << data;
         first = false;
     }
-    oss << "]";
+    
+    oss << "]"; // No comma on the last property
 
     if (encloseInBrackets) {
-        oss << newline << "}";
+        oss << newline << current_indent << "}";
     }
 
     return oss.str();

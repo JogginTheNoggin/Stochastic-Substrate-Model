@@ -403,29 +403,32 @@ void AddOperator::changeParams(const std::vector<int>& params){
  * @return std::string A string containing the Operator's state formatted as JSON.
  * @note Key Logic Steps: Constructs a JSON object string. Calls the base `Operator::toJson` method to get common property JSON, then appends its own specific properties like "weight", "threshold", and "accumulateData".
  */
-std::string AddOperator::toJson(bool prettyPrint, bool encloseInBrackets) const {
+std::string AddOperator::toJson(bool prettyPrint, bool encloseInBrackets, int indentLevel) const {
     std::ostringstream oss;
-    std::string indent = prettyPrint ? "  " : "";
+    
+    std::string current_indent = prettyPrint ? std::string(indentLevel * 2, ' ') : "";
+    std::string inner_indent = prettyPrint ? std::string((indentLevel + 1) * 2, ' ') : "";
     std::string newline = prettyPrint ? "\n" : "";
     std::string space = prettyPrint ? " " : "";
 
     if (encloseInBrackets) {
-        oss << "{" << newline;
+        oss << current_indent << "{" << newline;
     }
 
-    // Call base class to get its part of the JSON, without enclosing brackets.
-    oss << Operator::toJson(prettyPrint, false);
+    // Get the base class content as a fragment, passing the current indentLevel.
+    std::string baseJson = Operator::toJson(prettyPrint, false, indentLevel);
+    oss << baseJson;
 
     // Add a comma to separate base content from derived content
     oss << "," << newline;
 
-    // Add AddOperator-specific properties
-    oss << indent << "\"weight\":" << space << this->weight << "," << newline;
-    oss << indent << "\"threshold\":" << space << this->threshold << "," << newline;
-    oss << indent << "\"accumulateData\":" << space << this->accumulateData; // No comma on the last property
+    // Add AddOperator-specific properties, using the inner_indent
+    oss << inner_indent << "\"weight\":" << space << this->weight << "," << newline;
+    oss << inner_indent << "\"threshold\":" << space << this->threshold << "," << newline;
+    oss << inner_indent << "\"accumulateData\":" << space << this->accumulateData; // No comma on the last property
 
     if (encloseInBrackets) {
-        oss << newline << "}";
+        oss << newline << current_indent << "}";
     }
 
     return oss.str();

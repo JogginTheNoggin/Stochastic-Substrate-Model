@@ -217,43 +217,43 @@ bool OutOperator::equals(const Operator& other) const {
 
 // In general/OutOperator.cpp
 
-std::string OutOperator::toJson(bool prettyPrint, bool encloseInBrackets) const {
-    // Purpose: Generates a JSON string representation of the OutOperator's state.
-    // Parameters:
-    // - @param prettyPrint: If true, format the JSON for human readability.
-    // - @param encloseInBrackets: If true, wrap the entire output in curly braces.
-    // Return: A string containing the Operator's state formatted as JSON.
-    // Key Logic Steps:
-    // 1. Call the base Operator::toJson to get common properties.
-    // 2. Append a comma separator.
-    // 3. Append this class's specific "data" array, handling pretty-printing for its contents.
-
+/**
+ * @brief Generates a JSON string representation of the OutOperator's state.
+ * @param prettyPrint If true, format the JSON for human readability.
+ * @param encloseInBrackets If true, wrap the entire output in curly braces.
+ * @param indentLevel The current level of indentation for pretty-printing.
+ * @return A string containing the Operator's state formatted as JSON.
+ */
+std::string OutOperator::toJson(bool prettyPrint, bool encloseInBrackets, int indentLevel) const { // 
     std::ostringstream oss;
-    std::string indent = prettyPrint ? "  " : "";
+
+    std::string current_indent = prettyPrint ? std::string(indentLevel * 2, ' ') : "";
+    std::string inner_indent = prettyPrint ? std::string((indentLevel + 1) * 2, ' ') : "";
+    std::string array_element_indent = prettyPrint ? std::string((indentLevel + 2) * 2, ' ') : "";
     std::string newline = prettyPrint ? "\n" : "";
     std::string space = prettyPrint ? " " : "";
 
     if (encloseInBrackets) {
-        oss << "{" << newline;
+        oss << current_indent << "{" << newline;
     }
 
-    // 1. Get the base class JSON content first (without enclosing brackets).
-    oss << Operator::toJson(prettyPrint, false);
-    
-    // 2. Add a comma to separate base content from derived content.
-    oss << "," << newline;
-    
-    // 3. Add OutOperator-specific properties.
-    oss << indent << "\"data\":" << space << "[";
+    // Get the base class JSON content as a fragment, passing the current indentLevel.
+    std::string baseJson = Operator::toJson(prettyPrint, false, indentLevel);
+    oss << baseJson;
 
+    // Add a comma to separate base content from derived content
+    oss << "," << newline;
+
+    // Add OutOperator-specific properties
+    oss << inner_indent << "\"data\":" << space << "[";
+    
     if (!data.empty()) {
         if (prettyPrint) {
             oss << newline;
-            std::string deeper_indent = indent + "  ";
             for (size_t i = 0; i < data.size(); ++i) {
-                oss << deeper_indent << data[i] << (i == data.size() - 1 ? "" : ",") << newline;
+                oss << array_element_indent << data[i] << (i == data.size() - 1 ? "" : ",") << newline;
             }
-            oss << indent;
+            oss << inner_indent;
         } else { // Compact version
             for (size_t i = 0; i < data.size(); ++i) {
                 oss << data[i] << (i == data.size() - 1 ? "" : ",");
@@ -261,10 +261,10 @@ std::string OutOperator::toJson(bool prettyPrint, bool encloseInBrackets) const 
         }
     }
 
-    oss << "]"; // Closing bracket for the data array.
+    oss << "]"; // No comma on the last property
 
     if (encloseInBrackets) {
-        oss << newline << "}";
+        oss << newline << current_indent << "}";
     }
 
     return oss.str();
