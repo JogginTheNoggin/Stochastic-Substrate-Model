@@ -19,7 +19,7 @@ OutputLayer::OutputLayer(bool isIdRangeFinal, IdRange* initialReservedRange): La
 
 
 OutputLayer::OutputLayer(bool isIdRangeFinal, const std::byte*& currentPayloadData,  const std::byte* endOfPayloadData)
-    : Layer(LayerType::OUTPUT_LAYER, isRangeFinal){
+    : Layer(LayerType::OUTPUT_LAYER, isIdRangeFinal){
 
     deserialize(currentPayloadData, endOfPayloadData); // use superclass to deserialize base data,
     /*  De-serializing the different channels is tricky given we don't know the ids.
