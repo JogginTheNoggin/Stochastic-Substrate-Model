@@ -7,9 +7,20 @@
 
 
 InputLayer::InputLayer(bool rangeFinal, IdRange* initialReservedRange): Layer(LayerType::INPUT_LAYER, initialReservedRange, rangeFinal){
-    
     uint32_t newOpId; 
     InOperator* channelOp;
+
+    // FIX: Perform precondition validation BEFORE creating operators.
+    // This ensures the constructor fails immediately if the range is invalid,
+    // which is the behavior the unit test correctly expects.
+    if (!reservedRange) {
+        throw std::runtime_error("InputLayer requires a non-null IdRange.");
+    }
+    if(reservedRange->count() != channelCount){
+        throw std::runtime_error("Range of layer must match channel count."); 
+    }
+
+    
     // create op channels, 
     for(int i = 0; i < channelCount; i++){
         newOpId = generateNextId(); 
@@ -23,7 +34,7 @@ InputLayer::InputLayer(bool rangeFinal, IdRange* initialReservedRange): Layer(La
 
 
 void InputLayer::validate(){
-    if(reservedRange->count() != channelCount){
+    if(reservedRange->count() != channelCount){ // redundante current constructor will change
         throw std::runtime_error("Range of layer must match channel count."); 
     }
     else if(operators.empty()){
