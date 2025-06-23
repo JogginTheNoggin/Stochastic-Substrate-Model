@@ -43,11 +43,15 @@ void InputLayer::validate(){
     // check op for each channel type
     for(int i = 0; i < channelCount; i++){ 
         uint32_t id = reservedRange->getMinId() + i;
-        if(operators.at(i) != nullptr){ 
-            checkType(operators.at(id)); // check each type is of class out operatoer 
+        auto it = operators.find(id);
+        if (it != operators.end() && it->second != nullptr) {
+            checkType(it->second); // check each type is of class InOperator
         }
         else {
-            break; // TODO we do not accept noncontiguous. this should be enforced. 
+            // This should ideally not be reached if constructor and reservedRange are valid,
+            // as operators for all channel IDs should have been created.
+            // If reservedRange->count() != channelCount, the earlier check handles it.
+            throw std::runtime_error("Operator not found or is null for expected channel ID: " + std::to_string(id));
         }
     }
 }
@@ -55,7 +59,8 @@ void InputLayer::validate(){
 
 void InputLayer::checkType(Operator* op) {
     if(op == nullptr){
-        throw std::runtime_error("Operator cannot be null."); 
+        // This case should be caught by the check in validate() before calling checkType.
+        throw std::runtime_error("Operator cannot be null (checked in checkType).");
     }
     else if (InOperator* inOp = dynamic_cast<InOperator*>(op)) {
         return; 
