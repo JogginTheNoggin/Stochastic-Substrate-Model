@@ -35,7 +35,7 @@ public:
      * @param isRangeFinal Defines if the layer's ID range is static or dynamic.
      * @param initialReservedRange The pre-allocated ID range for this layer.
      */
-    InputLayer(bool isRangeFinal, IdRange* initialReservedRange);
+    InputLayer(bool isIdRangeFinal, IdRange* initialReservedRange);
 
     /**
      * @brief Constructor for deserialization.
@@ -43,7 +43,7 @@ public:
      * @param currentPayloadData Pointer to the start of this layer's payload.
      * @param endOfPayloadData Boundary of this layer's payload.
      */
-    InputLayer(bool isRangeFinal,  const std::byte*& currentPayloadData, const std::byte* endOfPayloadData);
+    InputLayer(bool isIdRangeFinal,  const std::byte*& currentPayloadData, const std::byte* endOfPayloadData);
 
     /**
      * @brief Implements the random initialization logic specific to an Internal Layer.

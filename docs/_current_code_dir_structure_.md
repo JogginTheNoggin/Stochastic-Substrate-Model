@@ -59,6 +59,7 @@
     - InputLayer/
       - golden_files/
     - InternalLayer/
+      - InternalLayerTests.cpp
       - golden_files/
     - Layer/
       - LayerTests.cpp

@@ -8,7 +8,7 @@
 #include <stdexcept>               // For std::runtime_error
 
 
-OutputLayer::OutputLayer(bool isRangeFinal, IdRange* initialReservedRange): Layer(LayerType::OUTPUT_LAYER, initialReservedRange, isRangeFinal){
+OutputLayer::OutputLayer(bool isIdRangeFinal, IdRange* initialReservedRange): Layer(LayerType::OUTPUT_LAYER, initialReservedRange, isIdRangeFinal){
 
 
 
@@ -25,7 +25,7 @@ OutputLayer::OutputLayer(bool isRangeFinal, IdRange* initialReservedRange): Laye
 }
 
 
-OutputLayer::OutputLayer(bool isRangeFinal, const std::byte*& currentPayloadData,  const std::byte* endOfPayloadData)
+OutputLayer::OutputLayer(bool isIdRangeFinal, const std::byte*& currentPayloadData,  const std::byte* endOfPayloadData)
     : Layer(LayerType::OUTPUT_LAYER, isRangeFinal){
 
     deserialize(currentPayloadData, endOfPayloadData); // use superclass to deserialize base data,

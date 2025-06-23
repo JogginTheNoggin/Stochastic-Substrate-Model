@@ -37,7 +37,7 @@ public:
      * @note reservedRange must equal the channel count, no unused or extra space
      * this is based on the way will map operators to a specific channel type, ie text, image, audio etc
      */
-    OutputLayer(bool isRangeFinal, IdRange* initialReservedRange);
+    OutputLayer(bool isIdRangeFinal, IdRange* initialReservedRange);
 
     /**
      * @brief Constructor for deserialization.
@@ -45,7 +45,7 @@ public:
      * @param currentPayloadData Pointer to the start of this layer's payload.
      * @param endOfPayloadData Boundary of this layer's payload.
      */
-    OutputLayer(bool isRangeFinal,  const std::byte*& currentPayloadData, const std::byte* endOfPayloadData);
+    OutputLayer(bool isIdRangeFinal,  const std::byte*& currentPayloadData, const std::byte* endOfPayloadData);
 
     /**
      * @brief Used to check if the layer has any output for text to be read

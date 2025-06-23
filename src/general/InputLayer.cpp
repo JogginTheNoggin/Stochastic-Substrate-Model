@@ -66,8 +66,8 @@ void InputLayer::checkType(Operator* op) {
 }
 
 // TODO de-serialization of different channels?
-InputLayer::InputLayer(bool isRangeFinal, const std::byte*& currentPayloadData,  const std::byte* endOfPayloadData)
-    : Layer(LayerType::INPUT_LAYER, isRangeFinal){
+InputLayer::InputLayer(bool isIdRangeFinal, const std::byte*& currentPayloadData,  const std::byte* endOfPayloadData)
+    : Layer(LayerType::INPUT_LAYER, isIdRangeFinal){
 
     deserialize(currentPayloadData, endOfPayloadData); // use superclass to deserialize base data,
 }
