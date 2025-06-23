@@ -80,33 +80,21 @@ TEST_F(InputLayerTest, Constructor_ValidRange_Static) {
     }
 }
 
-// Removed temporarily
-/*
+
 TEST_F(InputLayerTest, Constructor_RangeTooSmall_ThrowsException) {
-    // Range for 2 operators when defaultChannelCount is 3
-    IdRange* smallRange = new IdRange(1, 1 + defaultChannelCount - 2); 
+    // ARRANGE: Create a range that is too small for the default channel count (3).
+    // This IdRange will be owned and managed by the InputLayer constructor.
+    IdRange* smallRange = new IdRange(1, 1 + defaultChannelCount - 2); // Count is 2, expected 3
     bool isFinal = false;
 
-    // FIX: Replace EXPECT_THROW with a manual try/catch block to correctly
-    // manage the lifetime of the 'smallRange' raw pointer and prevent a crash
-    // from a double-free if the constructor fails to throw.
-    try {
+    // ACT & ASSERT: 
+    // The InputLayer constructor should throw a runtime_error because the range count
+    // does not match the required channel count. GTest's EXPECT_THROW handles the
+    // exception. The Layer's destructor will be called automatically during stack
+    // unwinding, correctly deleting smallRange and preventing a memory leak.
+    EXPECT_THROW({
         InputLayer layer(isFinal, smallRange);
-        // If we get here, the constructor didn't throw as expected. This is a test failure.
-        // The 'layer' object now owns the 'smallRange' pointer and will delete it
-        // when it goes out of scope at the end of this 'try' block. We must not delete it again.
-        FAIL() << "Expected std::runtime_error, but no exception was thrown.";
-    } catch (const std::runtime_error& e) {
-        // The expected exception was thrown. The InputLayer object was never fully constructed,
-        // so it never took ownership of 'smallRange'. We are responsible for cleanup.
-        delete smallRange;
-        SUCCEED(); // Mark the test as successful.
-    } catch (...) {
-        // An unexpected exception type was thrown.
-        // The 'layer' object was not constructed, so we must clean up the memory.
-        delete smallRange;
-        FAIL() << "Expected std::runtime_error, but a different exception was thrown.";
-    }
+    }, std::runtime_error);
 }
 
 
@@ -124,11 +112,11 @@ TEST_F(InputLayerTest, Constructor_NullRange_ThrowsException) {
         InputLayer layer(isFinal, nullptr);
     }, std::runtime_error);
 }
-*/
+
 
 // --- randomInit Tests ---
 TEST_F(InputLayerTest, RandomInit_BasicInitialization) {
-    std::unique_ptr<InputLayer> layer(createLayer(defaultLayerRange));
+    std::unique_ptr<InputLayer> layer(createLayer(new IdRange(*defaultLayerRange)));
     IdRange connectionRange(200, 300);
 
     // InputLayer::randomInit iterates through its operators (channels)
@@ -169,7 +157,7 @@ TEST_F(InputLayerTest, RandomInit_BasicInitialization) {
 }
 
 TEST_F(InputLayerTest, RandomInit_NullConnectionRange) {
-    std::unique_ptr<InputLayer> layer(createLayer(defaultLayerRange));
+    std::unique_ptr<InputLayer> layer(createLayer(new IdRange(*defaultLayerRange)));
 
     // If connectionRange is nullptr, InOperator::randomInit should handle it gracefully
     // (e.g., by making 0 connections).
@@ -224,7 +212,7 @@ TEST_F(InputLayerTest, RandomInit_NoOperators_DoesNotThrow) {
 // or specific observable side effects from InOperator::message.
 // This test primarily ensures the method runs without crashing and targets the expected channel.
 TEST_F(InputLayerTest, InputText_SendsMessagesToTextChannel) {
-    std::unique_ptr<InputLayer> layer(createLayer(defaultLayerRange));
+    std::unique_ptr<InputLayer> layer(createLayer(new IdRange(*defaultLayerRange)));
 
     // The text channel is expected to be the operator with ID: defaultLayerRange->getMinId() + textChannelIdOffset
     // In InputLayer.h, textChannelIdOffset is 0.

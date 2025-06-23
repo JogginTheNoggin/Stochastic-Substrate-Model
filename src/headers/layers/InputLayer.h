@@ -21,13 +21,20 @@ private:
     const int imgChannelIdOffset = 1;
     const int audioChannelIdOffset = 2;
 
+    // for initializing the input channels
+    void initChannels();
+
     // preforms checks on layer to ensure contains right amount of channels and reserved range matches this
     void validate(); 
+
+    bool channelsSet(); 
 
     /**
      * @brief for checking if the operator is of type InputOperator
      */
     void checkType(Operator* op);
+
+    void checkRange();
 
 public:
     /**
@@ -44,6 +51,7 @@ public:
      * @param endOfPayloadData Boundary of this layer's payload.
      */
     InputLayer(bool isIdRangeFinal,  const std::byte*& currentPayloadData, const std::byte* endOfPayloadData);
+
 
     /**
      * @brief Implements the random initialization logic specific to an Internal Layer.

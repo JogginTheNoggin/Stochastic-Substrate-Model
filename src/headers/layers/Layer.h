@@ -19,7 +19,7 @@ class Layer {
 protected:
     LayerType type;
     bool isRangeFinal; // Flag for growing
-    IdRange* reservedRange;
+    IdRange* reservedRange = nullptr;
     // setting the defaults to both the max and min is so that any newly added operator
     // within accepted range, will replace both values, without having to perform addition checks for default cases
     uint32_t currentMinId = std::numeric_limits<uint32_t>::max(); 
@@ -27,6 +27,7 @@ protected:
     std::unordered_map<uint32_t, Operator*> operators;
 
     // not accessible for construction, as is to be treated as abstract
+    // set reserved range to 
     explicit Layer(LayerType layerType, bool isLayerRangeFinal = true): type(layerType), isRangeFinal(isLayerRangeFinal) {} // Constructor for manual creation
 
 

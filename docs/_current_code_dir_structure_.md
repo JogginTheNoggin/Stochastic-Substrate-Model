@@ -48,6 +48,7 @@
     - Randomizer.h
     - Serializer.h
 - main.cpp
+- unit_tests/
 
 ## `tests/`
 - Testing/
@@ -57,18 +58,15 @@
 - unit_tests/
   - LayerTests/
     - InputLayer/
-      - golden_files/
+      - InputLayerTests.cpp
     - InternalLayer/
       - InternalLayerTests.cpp
-      - golden_files/
     - Layer/
       - LayerTests.cpp
       - golden_files/
         - empty_layer.json
         - layer_with_operators.json
         - layer_with_operators_compact.json
-    - OutputLayer/
-      - golden_files/
   - OperatorTests/
     - AddOperator/
       - AddOperatorTests.cpp

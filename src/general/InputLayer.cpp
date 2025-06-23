@@ -7,18 +7,42 @@
 
 
 InputLayer::InputLayer(bool rangeFinal, IdRange* initialReservedRange): Layer(LayerType::INPUT_LAYER, initialReservedRange, rangeFinal){
-    uint32_t newOpId; 
-    InOperator* channelOp;
+    // FIX: Perform precondition validation BEFORE creating operators.
+    // This ensures the constructor fails immediately if the range is invalid,
+    // which is the behavior the unit test correctly expects.
+    checkRange(); 
+
+    initChannels();
+
+    validate(); // perfrom check to ensure operators to respective channels is valid 
+}
+
+// TODO de-serialization of different channels?
+InputLayer::InputLayer(bool isIdRangeFinal, const std::byte*& currentPayloadData,  const std::byte* endOfPayloadData)
+    : Layer(LayerType::INPUT_LAYER, isIdRangeFinal){
+    
+    deserialize(currentPayloadData, endOfPayloadData); // use superclass to deserialize base data,
 
     // FIX: Perform precondition validation BEFORE creating operators.
     // This ensures the constructor fails immediately if the range is invalid,
     // which is the behavior the unit test correctly expects.
-    if (!reservedRange) {
-        throw std::runtime_error("InputLayer requires a non-null IdRange.");
+    checkRange(); 
+
+    // check if properly set up channels
+    // if not construct them
+    if(!channelsSet()){
+        clearOperators(); // just reset the operators, through one or two could have been created
+        initChannels();
     }
-    if(reservedRange->count() != channelCount){
-        throw std::runtime_error("Range of layer must match channel count."); 
-    }
+    
+    validate(); // perfrom check to ensure operators to respective channels is valid 
+}
+
+void InputLayer::initChannels(){
+    uint32_t newOpId; 
+    InOperator* channelOp;
+
+    
 
     
     // create op channels, 
@@ -27,11 +51,7 @@ InputLayer::InputLayer(bool rangeFinal, IdRange* initialReservedRange): Layer(La
         channelOp = new InOperator(newOpId);
         addNewOperator(channelOp); // add and update id's to this layer
     }
-
-    // TODO need to perform checks to be sure all operators in layer are of OutOperator Type
-    validate(); // perfrom check to ensure operators to respective channels is valid 
 }
-
 
 void InputLayer::validate(){
     if(reservedRange->count() != channelCount){ // redundante current constructor will change
@@ -51,7 +71,17 @@ void InputLayer::validate(){
         */
     }
 
-    // check op for each channel type
+    if(!channelsSet()){
+        // This should ideally not be reached if constructor and reservedRange are valid,
+        // as operators for all channel IDs should have been created.
+        // If reservedRange->count() != channelCount, the earlier check handles it.
+        // however this scenario could occur post deserialization if operators not set
+        throw std::runtime_error("Number of Operator channels not sufficient.");
+    }
+}
+
+
+bool InputLayer::channelsSet(){
     for(int i = 0; i < channelCount; i++){ 
         uint32_t id = reservedRange->getMinId() + i;
         auto it = operators.find(id);
@@ -62,11 +92,20 @@ void InputLayer::validate(){
             // This should ideally not be reached if constructor and reservedRange are valid,
             // as operators for all channel IDs should have been created.
             // If reservedRange->count() != channelCount, the earlier check handles it.
-            throw std::runtime_error("Operator not found or is null for expected channel ID: " + std::to_string(id));
+            return false;
         }
     }
+    return true;
 }
 
+void InputLayer::checkRange(){
+    if (!reservedRange) {
+        throw std::runtime_error("InputLayer requires a non-null IdRange.");
+    }
+    if(reservedRange->count() != channelCount){
+        throw std::runtime_error("Range of layer must match channel count."); 
+    }
+}
 
 void InputLayer::checkType(Operator* op) {
     if(op == nullptr){
@@ -81,12 +120,7 @@ void InputLayer::checkType(Operator* op) {
     }
 }
 
-// TODO de-serialization of different channels?
-InputLayer::InputLayer(bool isIdRangeFinal, const std::byte*& currentPayloadData,  const std::byte* endOfPayloadData)
-    : Layer(LayerType::INPUT_LAYER, isIdRangeFinal){
 
-    deserialize(currentPayloadData, endOfPayloadData); // use superclass to deserialize base data,
-}
 
 // Randomize the connections of the input channel, providing a pathway into other layers, and operators
 void InputLayer::randomInit(IdRange* connectionRange, Randomizer* randomizer) {
