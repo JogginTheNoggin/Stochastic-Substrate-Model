@@ -10,23 +10,23 @@ class InternalLayer : public Layer {
 public:
     /**
      * @brief Constructor for programmatic creation.
-     * @param isRangeFinal Defines if the layer's ID range is static or dynamic.
+     * @param isLayerRangeFinal Defines if the layer's ID range is static or dynamic.
      * @param initialReservedRange The pre-allocated ID range for this layer.
      */
-    InternalLayer(bool isRangeFinal, IdRange* initialReservedRange);
+    InternalLayer(bool isLayerRangeFinal, IdRange* initialReservedRange);
 
     /**
      * @brief Constructor for deserialization.
-     * @param isRangeFinal The dynamic status read from the file header by MetaController.
+     * @param isLayerRangeFinal The dynamic status read from the file header by MetaController.
      * @param currentPayloadData Pointer to the start of this layer's payload.
      * @param endOfPayloadData Boundary of this layer's payload.
      */
-    InternalLayer(bool isRangeFinal, 
+    InternalLayer(bool isLayerRangeFinal, 
                   const std::byte*& currentPayloadData, 
                   const std::byte* endOfPayloadData);
 
 
-    InternalLayer(bool isRangeFinal);
+    //InternalLayer(bool isRangeFinal);
 
     /**
      * @brief Implements the random initialization logic specific to an Internal Layer.

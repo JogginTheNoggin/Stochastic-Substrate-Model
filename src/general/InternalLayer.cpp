@@ -5,23 +5,29 @@
 #include "../headers/operators/AddOperator.h"
 #include "../headers/UpdateEvent.h"
 
-InternalLayer::InternalLayer(bool isRangeFinal, const std::byte*& currentPayloadData,  const std::byte* endOfPayloadData)
-    : Layer(LayerType::INTERNAL_LAYER, isRangeFinal){
+InternalLayer::InternalLayer(bool isLayerRangeFinal, const std::byte*& currentPayloadData,  const std::byte* endOfPayloadData)
+    : Layer(LayerType::INTERNAL_LAYER, isLayerRangeFinal){
 
     deserialize(currentPayloadData, endOfPayloadData); // use superclass to deserialize base data,
 }
 
 
-InternalLayer::InternalLayer(bool isFinalRange, IdRange* initialReservedRange): Layer(LayerType::INTERNAL_LAYER, initialReservedRange, isRangeFinal){
+InternalLayer::InternalLayer(bool isLayerRangeFinal, IdRange* initialReservedRange): Layer(LayerType::INTERNAL_LAYER, initialReservedRange, isLayerRangeFinal){
     
 }
 
 
 void InternalLayer::randomInit(IdRange* connectionRange, Randomizer* randomizer) {
+    if (!reservedRange || !randomizer) {
+        return; // Cannot initialize without a range or randomizer
+    }
     // This method populates an empty, programmatically-created layer.
 
     // 1. Create Operators for this layer.
     int capacity = reservedRange->count();
+    if (capacity <= 0) {
+        return;
+    }
     int numOpsToCreate = (capacity > 1) ? randomizer->getInt(capacity / 2, capacity) : capacity; // half to full capacity
     
     std::vector<Operator*> justCreatedOperators; // Keep track of new ops to connect them

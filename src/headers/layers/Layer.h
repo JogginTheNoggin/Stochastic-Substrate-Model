@@ -27,11 +27,11 @@ protected:
     std::unordered_map<uint32_t, Operator*> operators;
 
     // not accessible for construction, as is to be treated as abstract
-    explicit Layer(LayerType layerType, bool isRangeFinal = true): type(layerType), isRangeFinal(isRangeFinal) {} // Constructor for manual creation
+    explicit Layer(LayerType layerType, bool isLayerRangeFinal = true): type(layerType), isRangeFinal(isLayerRangeFinal) {} // Constructor for manual creation
 
 
-    explicit Layer(LayerType layerType, IdRange* operatorReservedRange, bool isIdRangeFinal = true ): type(layerType), 
-        reservedRange(operatorReservedRange), isRangeFinal(isIdRangeFinal) {} 
+    explicit Layer(LayerType layerType, IdRange* operatorReservedRange, bool isLayerRangeFinal = true ): type(layerType), 
+        reservedRange(operatorReservedRange), isRangeFinal(isLayerRangeFinal) {} 
 
     virtual void randomInit(IdRange* validConnectionRange, Randomizer* randomizer) = 0; 
 
