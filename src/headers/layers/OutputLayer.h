@@ -24,10 +24,18 @@ private:
     // preforms checks on layer to ensure contains right amount of channels and reserved range matches this
     void validate(); 
 
+    void initChannels(); 
+
     /**
      * @brief check to see that the operator is of type OutOperator
      */
     void checkType(Operator* op); // TODO maybe make a shared method, like enforceType(baseClass, subClass)
+
+    void checkRange();
+
+    bool channelsSet();
+
+
 
 public:
     /**

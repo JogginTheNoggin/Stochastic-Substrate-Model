@@ -10,16 +10,9 @@
 
 OutputLayer::OutputLayer(bool isIdRangeFinal, IdRange* initialReservedRange): Layer(LayerType::OUTPUT_LAYER, initialReservedRange, isIdRangeFinal){
 
+    checkRange();
 
-
-    uint32_t newOpId; 
-    OutOperator* channelOp;
-    // create op channels, 
-    for(int i = 0; i < channelCount; i++){
-        newOpId = generateNextId(); 
-        channelOp = new OutOperator(newOpId);
-        addNewOperator(channelOp); // add and update id's to this layer
-    }
+    initChannels();
     
     validate(); //
 }
@@ -39,16 +32,42 @@ OutputLayer::OutputLayer(bool isIdRangeFinal, const std::byte*& currentPayloadDa
         future channels cans be accomodated by adopting a different mapping. 
 
     */
+    checkRange();
+
+    // issue because other layers may have connected to this layers operators. 
+    // however so long as the range remains the same, and is valid
+    // will end up creating new operators with the same ID other layers where connected to
+    // therefore meaning they can still send to correct output channels without issue
+    // via index the operator id
+    if(!channelsSet()){
+        clearOperators(); // just reset the operators, though one or two could have been created
+        initChannels();
+    }
         
-    // TODO need to perform checks to be sure all operators in layer are of OutOperator Type
     validate(); // perform checks to ensure operators and channels correct
 
 }
+
+void OutputLayer::initChannels(){
+    uint32_t newOpId; 
+    OutOperator* channelOp;
+    // create op channels, 
+    for(int i = 0; i < channelCount; i++){
+        newOpId = generateNextId(); 
+        channelOp = new OutOperator(newOpId);
+        addNewOperator(channelOp); // add and update id's to this layer
+    }
+}
+
+
+
 
 bool OutputLayer::hasTextOutput(){
     uint32_t textChannelId = reservedRange->getMinId() + textChannelIdOffset; 
     return static_cast<OutOperator*>(operators.at(textChannelId))->hasOutput();  // static cast because we know it must be Out Operator
 }
+
+
 
 
 // get the layers text output
@@ -82,17 +101,17 @@ void OutputLayer::validate(){
     }
 
     // check op for each channel type
-    for(int i = 0; i < channelCount; i++){ // check for each channel type
-        uint32_t id = reservedRange->getMinId() + i;
-        if(operators.at(i) != nullptr){ 
-            checkType(operators.at(id)); // check each type is of class out operatoer 
-        }
-        else {
-            break; // TODO we do not accept noncontiguous. this should be enforced. 
-        }
+    if(!channelsSet()){
+        // This should ideally not be reached if constructor and reservedRange are valid,
+        // as operators for all channel IDs should have been created.
+        // If reservedRange->count() != channelCount, the earlier check handles it.
+        // however this scenario could occur post deserialization if operators not set
+        throw std::runtime_error("Number of Operator channels not sufficient.");
     }
 
 }
+
+
 
 void OutputLayer::checkType(Operator* op) {
     if(op == nullptr){
@@ -103,6 +122,34 @@ void OutputLayer::checkType(Operator* op) {
     }  
     else {
         throw std::runtime_error("Operator is not an Output operator. All operators within the output layer must be of type OutOperator.");
+    }
+}
+
+
+bool OutputLayer::channelsSet(){
+    for(int i = 0; i < channelCount; i++){ 
+        uint32_t id = reservedRange->getMinId() + i;
+        auto it = operators.find(id);
+        if (it != operators.end() && it->second != nullptr) {
+            checkType(it->second); // check each type is of class InOperator
+        }
+        else {
+            // This should ideally not be reached if constructor and reservedRange are valid,
+            // as operators for all channel IDs should have been created.
+            // If reservedRange->count() != channelCount, the earlier check handles it.
+            return false;
+        }
+    }
+    return true;
+}
+
+void OutputLayer::checkRange(){
+    if (!reservedRange) {
+        throw std::runtime_error("InputLayer requires a non-null IdRange.");
+    }
+    if(reservedRange->count() != channelCount){
+        throw std::runtime_error("Range of layer must match channel count."); 
+   
     }
 }
 
