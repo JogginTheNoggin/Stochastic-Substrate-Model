@@ -1,5 +1,6 @@
 #include "../headers/Simulator.h"
 #include "../headers/util/Randomizer.h"
+#include "../headers/util/Console.h"
 #include "../headers/layers/InputLayer.h"
 #include "../headers/layers/OutputLayer.h"
 // #include "UpdateEvent.h" // Likely not needed here anymore
@@ -39,12 +40,13 @@ Simulator::Simulator(const std::string& configPath /*= ""*/) :
 Simulator::~Simulator()
 {
     requestStop(); // Ensure any background simulation thread is signaled to stop
-    std::cout << "Simulator shutting down..." << std::endl;
+    ConsoleWriter writer; // used to ensure prints uninterrupted
+    writer << "Simulator shutting down..." << std::endl;
     // Controllers are automatically destroyed here.
     // Assumes Schedulers are reset globally.
-    std::cout << "Final Operator count from MetaController: " << metaController.getTotalOperatorCount() << std::endl;
-    std::cout << "Simulator finished." << std::endl;
-    std::cout << "Simulator shutting down..." << std::endl;
+    writer << "Final Operator count from MetaController: " << metaController.getTotalOperatorCount() << std::endl;
+    writer << "Simulator finished." << std::endl;
+    writer << "Simulator shutting down..." << std::endl;
 }
 
 
@@ -59,7 +61,7 @@ void Simulator::init() {
         Scheduler::CreateInstance(&timeController);
         UpdateScheduler::CreateInstance(&updateController);
     } catch (const std::exception& e) {
-        std::cerr << "FATAL ERROR during Scheduler setup: " << e.what() << std::endl;
+        ConsoleWriter() << "FATAL ERROR during Scheduler setup: " << e.what() << std::endl;
         // Handle initialization failure (e.g., rethrow, exit)
         throw; // Rethrow to indicate simulation cannot start
     }
@@ -68,9 +70,9 @@ void Simulator::init() {
     // No call to setupInitialNetwork() needed here.
     // No initial ProcessUpdates() call needed here unless MetaController setup queues events.
     // If MetaController setup *does* queue events, the first ProcessUpdates() inside run() will handle them.
-
-    std::cout << "Simulator initialized." << std::endl;
-    std::cout << "Initial Operator count from MetaController: " << metaController.getTotalOperatorCount() << std::endl;
+    ConsoleWriter writer; // used to ensure prints uninterrupted
+    writer << "Simulator initialized." << std::endl;
+    writer << "Initial Operator count from MetaController: " << metaController.getTotalOperatorCount() << std::endl;
 }
 
 
@@ -78,9 +80,16 @@ void Simulator::loadConfiguration(const std::string& filePath) {
     // Purpose: To load a network configuration from a file.
     // Parameters: @param filePath - The path to the configuration file.
     // Return: Void.
-    // Key Logic: Acquires a lock to ensure thread safety, then delegates the call to MetaController.
+    // Key Logic: Checks if a simulation is running. If not, acquires a lock and delegates the call to MetaController.
+    if (isRunning) {
+        ConsoleWriter() << "Error: Cannot load new configuration while a simulation is running." << std::endl;
+        return;
+    }
     std::lock_guard<std::mutex> lock(simMutex);
     metaController.loadConfiguration(filePath);
+    if (metaController.getTotalOperatorCount() == 0) {
+        hasNetwork = true;
+    }
 }
 
 void Simulator::saveConfiguration(const std::string& filePath) const {
@@ -90,16 +99,24 @@ void Simulator::saveConfiguration(const std::string& filePath) const {
     // Key Logic: Acquires a lock for thread-safe access to the MetaController, then delegates the call.
     std::lock_guard<std::mutex> lock(simMutex);
     metaController.saveConfiguration(filePath);
+    
 }
 
 void Simulator::createNewNetwork(int numOperators) {
     // Purpose: To create a new, randomly generated network.
     // Parameters: @param numOperators - The number of internal operators for the network.
     // Return: Void.
-    // Key Logic: Acquires a lock, creates a local Randomizer, and delegates the network creation to the MetaController. 
+    // Key Logic: Checks if a simulation is running. If not, acquires a lock, creates a local Randomizer, and delegates the network creation to the MetaController. 
+    if (isRunning) {
+        ConsoleWriter() << "Error: Cannot create a new network while a simulation is running." << std::endl;
+        return;
+    }
     std::lock_guard<std::mutex> lock(simMutex);
     Randomizer r;
     metaController.randomizeNetwork(numOperators, &r);
+    if (metaController.getTotalOperatorCount() == 0) {
+        hasNetwork = true;
+    }
 }
 
 
@@ -116,16 +133,25 @@ void Simulator::createNewNetwork(int numOperators) {
  */
 void Simulator::run(int numSteps)
 {
-
     // Purpose: To run the simulation for a fixed number of steps.
     // Parameters: @param numSteps - The number of time steps to execute.
     // Return: Void.
-    // Key Logic: Resets the stop flag. Loops for `numSteps`, acquiring a lock for each step to perform processing via TimeController and UpdateController. Checks the stop flag each iteration to allow for graceful interruption. 
+    // Key Logic: Adds checks to prevent running without a network or running concurrently. Sets isRunning flag during execution.
+    if (hasNetwork) {
+        ConsoleWriter() << "Error: No network loaded. Please use 'load-config' or 'new-network' first." << std::endl;
+        return;
+    }
+    if (isRunning) {
+        ConsoleWriter() << "Error: Simulation is already running." << std::endl;
+        return;
+    }
+
+    isRunning = true;
     stopFlag = false;
-    std::cout << "Starting simulation run for " << numSteps << " steps." << std::endl;
+    ConsoleWriter() << "Starting simulation run for " << numSteps << " steps." << std::endl;
     for (int i = 0; i < numSteps; ++i) {
         if (stopFlag) {
-            std::cout << "Simulation stopped by request." << std::endl;
+            ConsoleWriter() << "Simulation stopped by request." << std::endl;
             break;
         }
         
@@ -142,14 +168,14 @@ void Simulator::run(int numSteps)
             // 3. Advance time state (move next payloads to current, increment step counter)
             timeController.advanceStep();
             // Premature termination conditions
-            if (timeController.getActivePayloadCount() == 0 && updateController.IsQueueEmpty()) {
-                std::cout << "Simulation ended early at step " << timeController.getCurrentStep() << " due to inactivity." << std::endl;
+            if (isFinished()) {
                 break;
             }
         }
 
     }
-    std::cout << "Simulation run finished." << std::endl;
+    isRunning = false; // Signal that the run has completed
+    ConsoleWriter() << "Simulation run finished." << std::endl;
 }
 
 // TODO check comments
@@ -161,11 +187,22 @@ void Simulator::run(int numSteps)
  */
 void Simulator::run() // Overloaded run method
 {
-    std::cout << "Starting simulation run until inactive state or max " << DEFAULT_MAX_STEPS << " steps." << std::endl;
+    // Purpose: To run the simulation until it becomes inactive.
+    // Parameters: None.
+    // Return: Void.
+    // Key Logic: Adds checks to prevent running without a network or running concurrently. Sets isRunning flag during execution.
+    if (hasNetwork) {
+        ConsoleWriter() << "Error: No network loaded. Please use 'load-config' or 'new-network' first." << std::endl;
+        return;
+    }
+    if (isRunning) {
+        ConsoleWriter() << "Error: Simulation is already running." << std::endl;
+        return;
+    }
 
-    // Loop condition: Continue WHILE the step count is less than the max
-    // AND (there are active payloads OR there are pending updates).
-    // Loop *terminates* when steps >= max OR (no active payloads AND no pending updates).
+    isRunning = true;
+    stopFlag = false;
+    ConsoleWriter() << "Starting simulation run until inactive state or max " << DEFAULT_MAX_STEPS << " steps." << std::endl;
     while (!stopFlag) {
         {
             std::lock_guard<std::mutex> lock(simMutex);
@@ -182,30 +219,29 @@ void Simulator::run() // Overloaded run method
             // 3. Advance time state
             timeController.advanceStep();
              // --- Check for Inactivity---
-            if (timeController.getActivePayloadCount() == 0 && updateController.IsQueueEmpty()) {
-                std::cout << "Simulation ended due to inactivity." << std::endl;
+            if (isFinished()) {
                 break;
-            }
-            if (timeController.getCurrentStep() >= DEFAULT_MAX_STEPS) {
-                 std::cout << "Simulation stopped after reaching max steps." << std::endl;
-                 break;
             }
         }
     } // end while
 
-    
-    std::lock_guard<std::mutex> lock(simMutex);
-    // --- Post-Loop Logging ---
-    long long finalStep = timeController.getCurrentStep();
-    bool hitMaxSteps = (finalStep >= DEFAULT_MAX_STEPS);
 
-    std::cout << "--- Simulation Run Finished ---" << std::endl;
-    if (hitMaxSteps) {
-         std::cout << "Reason: Reached maximum step limit (" << DEFAULT_MAX_STEPS << ")." << std::endl;
-    } else {
-         std::cout << "Reason: Reached inactive state (no payloads or pending updates)." << std::endl; // Changed terminology
+    { // lock block
+        std::lock_guard<std::mutex> lock(simMutex);
+        ConsoleWriter writer; // used to ensure prints uninterrupted
+        // --- Post-Loop Logging ---
+        long long finalStep = timeController.getCurrentStep();
+        bool hitMaxSteps = (finalStep >= DEFAULT_MAX_STEPS);
+
+        writer << "--- Simulation Run Finished ---" << std::endl;
+        if (hitMaxSteps) {
+            writer << "Reason: Reached maximum step limit (" << DEFAULT_MAX_STEPS << ")." << std::endl;
+        } else {
+            writer << "Reason: Reached inactive state (no payloads or pending updates)." << std::endl; // Changed terminology
+        }
     }
-    
+
+    isRunning = false; // Signal that the run has completed
 }
 
 void Simulator::requestStop() {
@@ -217,26 +253,43 @@ void Simulator::requestStop() {
 }
 
 void Simulator::setLogFrequency(int newLogFreq){
-    std::lock_guard<std::mutex> lock(simMutex);
     if(newLogFreq < 0){
         return ;
     }
-    logFrequency = newLogFreq; 
+    logFrequency.store(newLogFreq); 
 }
 
+
+bool Simulator::isFinished(){
+    if(!isRunning){ // cannot finish if not started
+        return true;
+    }
+    else if (timeController.getActivePayloadCount() == 0 && updateController.IsQueueEmpty()) {
+        ConsoleWriter() << "Simulation ended due to inactivity." << std::endl;
+        return true;
+    }
+    else if (timeController.getCurrentStep() >= DEFAULT_MAX_STEPS) {
+        ConsoleWriter() << "Simulation stopped after reaching max steps." << std::endl;
+        return true;
+    }
+
+    return false;
+}
+
+// 
 void Simulator::submitText(const std::string& text) {
     // Purpose: To submit input text to the network.
     // Parameters: @param text - The text to submit.
     // Return: Void.
     // Key Logic: Acquires a lock, iterates through the layers managed by MetaController to find an InputLayer instance, and calls its `inputText` method.
     std::lock_guard<std::mutex> lock(simMutex);
-    for (const auto& layerPtr : metaController.getAllLayers()) {
+    for (const auto& layerPtr : metaController.getAllLayers()) { // TODO not efficient but good enough with only 3 layers
         if (auto* inputLayer = dynamic_cast<InputLayer*>(layerPtr.get())) {
             inputLayer->inputText(text);
             return;
         }
     }
-    std::cerr << "Warning: No InputLayer found to submit text." << std::endl;
+    ConsoleWriter() << "Warning: No InputLayer found to submit text." << std::endl;
 }
 
 std::string Simulator::getOutput() {
@@ -245,7 +298,7 @@ std::string Simulator::getOutput() {
     // Return: @return The output string.
     // Key Logic: Acquires a lock, iterates through layers to find an OutputLayer instance, and calls its `getTextOutput` method. 
     std::lock_guard<std::mutex> lock(simMutex);
-    for (const auto& layerPtr : metaController.getAllLayers()) {
+    for (const auto& layerPtr : metaController.getAllLayers()) { // TODO not efficient but good enough with only 3 layers
         if (auto* outputLayer = dynamic_cast<OutputLayer*>(layerPtr.get())) {
             return outputLayer->hasTextOutput()? outputLayer->getTextOutput() : "[ No New Output Text. ]";
         }

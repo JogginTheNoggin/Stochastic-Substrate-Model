@@ -44,7 +44,6 @@ private:
     // especially if ResetInstances isn't called globally at shutdown.
     Scheduler* schedulerInstance = nullptr;
     UpdateScheduler* updateSchedulerInstance = nullptr;
-    int logFrequency = 10;
 
     /**
      * @brief Default maximum steps for the run-until-stable method to prevent potential infinite loops.
@@ -74,8 +73,9 @@ private:
     // --- Threading & Synchronization ---
     mutable std::mutex simMutex;
     std::atomic<bool> stopFlag{false};
-
-
+    std::atomic<bool> isRunning{false}; // Flag to prevent concurrent runs
+    std::atomic<bool> hasNetwork{false}; 
+    std::atomic<int> logFrequency{10}; 
 public:
     /**
      * @brief Constructor for the Simulator class.
@@ -159,6 +159,13 @@ public:
      * @details This method finds the InputLayer and calls its `inputText` method. This action is thread-safe. 
      */
     virtual void submitText(const std::string& text);
+
+    /**
+     * @brief Checks if the simulator has finished running, and prints why
+     * @details Used to verify the end of the simulation using timeController and UpdateController details
+     * @note ! NOT THREAD SAFE ! Use when a lock is already present
+     */
+    virtual bool isFinished();
 
     /**
      * @brief Retrieves the collected output from the OutputLayer.
