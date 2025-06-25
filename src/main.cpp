@@ -1,24 +1,26 @@
+#include "../tests/unit_tests/helpers/MockSimulator.h" // Temporarily using mock simulator to run cli 
+#include "headers/cli/CLI.h"
 #include <iostream>
-#include <string>
-#include <iostream>
-#include <string>
+#include <memory>
 
-// --- Include Core Controller Headers ---
-#include "headers/Simulator.h"    //
+/**
+ * @brief The main entry point for the Neuron Simulator application.
+ * @details This function is responsible for initializing the core `Simulator` object
+ * and the `CLI` object. It then starts the command-line interface, which takes over
+ * the main thread until the user quits.
+ */
+int main(int argc, char* argv[]) {
+    // Use a smart pointer to manage the Simulator's lifetime and share it safely.
+    auto mockSimulator = std::make_shared<MockSimulator>();
 
+    // Create the CLI object, passing it the simulator instance.
+    auto cli = std::make_unique<CLI>(mockSimulator);
 
-// Example usage:
-int main() {
-    std::string input; 
-    
+    // Run the CLI. This will block the main thread until the user quits.
+    cli->run();
 
-    while(true){
-        std::cout << "Enter 'q' to quit: ";
-        std::cin >> input;
-        if (input == "q") {
-            break;
-        }
-    }
+    std::cout << "Application will now exit." << std::endl;
+
     return 0;
 }
 
