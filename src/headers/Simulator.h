@@ -34,6 +34,7 @@ struct SimulationStatus {
     }
 };
 
+// TODO currently no comprehensive testing
 class Simulator {
 private:
     MetaController metaController;

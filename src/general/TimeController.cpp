@@ -149,7 +149,7 @@ void TimeController::addToNextStepPayloads(const Payload& payload)
  * to the `operatorsToProcess` set, flagging it for its `processData()` method to be
  * called at the start of the next time step (Step N+2).
  */
-void TimeController::deliverAndFlagOperator(int targetOperatorId, int messageData)
+void TimeController::deliverAndFlagOperator(uint32_t targetOperatorId, int messageData)
 {
     if (metaControllerInstance.messageOp(targetOperatorId, messageData)) {
         // Operator found, and message delivered
@@ -195,7 +195,7 @@ size_t TimeController::getActivePayloadCount() const
 void TimeController::processOperatorChecks()
 {
     // Process operators flagged in the previous step
-    for (int operatorId : operatorsToProcess) {
+    for (uint32_t operatorId : operatorsToProcess) {
 
         // metaController will call the appropriate operator and process its accumulated data
         metaControllerInstance.processOpData(operatorId);
@@ -302,20 +302,16 @@ bool TimeController::loadState(const std::string& filePath) {
 
 /**
  * @brief Loads a specific number of payloads from the input stream.
- * private
+ * @private
  */
 std::vector<Payload> TimeController::loadPayloads(std::istream& in, uint64_t count) { 
-    // Purpose: Read 'count' payload blocks from stream and deserialize.
-    // Parameters: stream, count.
-    // Return: Vector of loaded Payloads. Throws on error.
-    // Key Logic: Loop 'count' times: read 1-byte size N, read N bytes, call Payload constructor, add to vector.
-    // TODO need try catch in event improper sizing, like out of bounds, reach eof sooner then expected
-
     std::vector<Payload> loadedPayloads;
-    loadedPayloads.reserve(static_cast<size_t>(count)); // Reserve space if count is reasonable
-    // TODO reserve space for payloads may not work for very large sizes, like uint64
-    for (uint64_t i = 0; i < count; ++i) { // reads each payload
-        // 1. Read 1-byte size prefix (N)
+    if (count > 0) {
+        loadedPayloads.reserve(static_cast<size_t>(count));
+    }
+    
+    for (uint64_t i = 0; i < count; ++i) { 
+        // 1. Read the 1-byte size prefix (N) which tells us the size of the data block to follow.
         char sizeByteChar;
         in.read(&sizeByteChar, 1);
         if (in.gcount() != 1) {
@@ -327,24 +323,23 @@ std::vector<Payload> TimeController::loadPayloads(std::istream& in, uint64_t cou
              throw std::runtime_error("Encountered payload block with declared size 0 during loadPayloads.");
         }
 
-        // 2. Read the next N bytes
+        // 2. Read the next N bytes into a buffer.
         std::vector<std::byte> payloadDataBuffer(dataSizeN);
         in.read(reinterpret_cast<char*>(payloadDataBuffer.data()), dataSizeN);
         if (static_cast<uint8_t>(in.gcount()) != dataSizeN) {
             throw std::runtime_error("Failed to read expected " + std::to_string(dataSizeN) + " data bytes for payload " + std::to_string(i+1) + "/" + std::to_string(count));
         }
 
-        // 3. Parse the Data Block & Create Payload
-        const std::byte* dataPtr = payloadDataBuffer.data(); // Start of data (Type field)
-        const std::byte* dataEnd = dataPtr + dataSizeN;       // End of data
+        // 3. The Payload constructor expects a pointer to the start of the data, NOT including the size prefix.
+        //    This is exactly what we have in payloadDataBuffer.
+        const std::byte* dataPtr = payloadDataBuffer.data();
+        const std::byte* dataEnd = dataPtr + dataSizeN;
 
-        Payload loadedPayload(dataPtr, dataEnd); // Use deserialization constructor
+        Payload loadedPayload(dataPtr, dataEnd);
 
-        // Check consumption
         if (dataPtr != dataEnd) {
-             throw std::runtime_error("Payload constructor did not consume entire data block. Size mismatch for payload " + std::to_string(i+1) + "/" + std::to_string(count));
+             throw std::runtime_error("Payload constructor did not consume entire data block for payload " + std::to_string(i+1) + ".");
         }
-
         loadedPayloads.push_back(std::move(loadedPayload));
     }
     return loadedPayloads;
@@ -352,53 +347,42 @@ std::vector<Payload> TimeController::loadPayloads(std::istream& in, uint64_t cou
 
 
 /**
- * @brief Loads a specific number of operator IDs from the input stream.
- * private
+ * @brief Loads a specific number of operator IDs (as uint32_t) from the input stream.
+ * @private
  */
-std::unordered_set<int> TimeController::loadOperatorsToProcess(std::istream& in, uint64_t count) {
-    // Purpose: Read 'count' operator ID blocks from stream.
+std::unordered_set<uint32_t> TimeController::loadOperatorsToProcess(std::istream& in, uint64_t count) {
+    // Purpose: Read 'count' uint32_t operator IDs from the stream.
     // Parameters: stream, count.
-    // Return: Set of loaded operator IDs. Throws on error.
-    // Key Logic: Loop 'count' times: read 1-byte size N, read N bytes, deserialize using readSizedIntBE, insert into set.
-    // TODO need try catch in event improper sizing, like out of bounds, reach eof sooner then expected
+    // Return: Set of loaded uint32_t operator IDs. Throws on error.
+    // Key Logic: Loops 'count' times, reads a fixed 4-byte block for each uint32_t,
+    //            and deserializes it using the appropriate Serializer method.
 
-    std::unordered_set<int> loadedIds;
-    loadedIds.reserve(static_cast<size_t>(count)); // Reserve space
+    std::unordered_set<uint32_t> loadedIds;
+    if (count > 0) {
+        loadedIds.reserve(static_cast<size_t>(count)); // Reserve space
+    }
 
-    for (uint64_t i = 0; i < count; ++i) { // for each operator in input stream
-         // Read 1-byte size N, read N bytes, deserialize using helper
-         // Need to read into a temporary buffer or adapt readSizedIntBE to work directly on istream?
-         // Let's read into buffer for consistency with Payload loading.
+    // A buffer to hold the bytes for one uint32_t
+    std::vector<std::byte> idDataBuffer(sizeof(uint32_t));
 
-         // 1. Read 1-byte size prefix (N)
-         char sizeByteChar;
-         in.read(&sizeByteChar, 1);
-         if (in.gcount() != 1) {
-             throw std::runtime_error("Failed to read 1-byte size prefix for operator ID " + std::to_string(i+1) + "/" + std::to_string(count));
-         }
-         uint8_t dataSizeN = static_cast<uint8_t>(sizeByteChar);
-         if (dataSizeN != sizeof(int)) { // Verify size immediately
-              throw std::length_error("Size mismatch for operator ID " + std::to_string(i+1) + "/" + std::to_string(count) + ". Expected " + std::to_string(sizeof(int)) + ", found " + std::to_string(dataSizeN));
-         }
+    for (uint64_t i = 0; i < count; ++i) {
+        // 1. Read the fixed 4 bytes for the uint32_t operator ID.
+        in.read(reinterpret_cast<char*>(idDataBuffer.data()), sizeof(uint32_t));
+        if (static_cast<size_t>(in.gcount()) != sizeof(uint32_t)) {
+            throw std::runtime_error("Failed to read expected " + std::to_string(sizeof(uint32_t)) 
+                                     + " bytes for operator ID " + std::to_string(i+1) + "/" + std::to_string(count));
+        }
 
-         // 2. Read N bytes
-         std::vector<std::byte> idDataBuffer(dataSizeN);
-         in.read(reinterpret_cast<char*>(idDataBuffer.data()), dataSizeN);
-         if (static_cast<uint8_t>(in.gcount()) != dataSizeN) {
-             throw std::runtime_error("Failed to read expected " + std::to_string(dataSizeN) + " data bytes for operator ID " + std::to_string(i+1) + "/" + std::to_string(count));
-         }
+        // 2. Deserialize the buffer using the direct (non-prefixed) uint32 reader.
+        const std::byte* dataPtr = idDataBuffer.data();
+        const std::byte* dataEnd = dataPtr + idDataBuffer.size();
+        uint32_t opId = Serializer::read_uint32(dataPtr, dataEnd);
 
-         // 3. Deserialize using iterator interface (even though we know size)
-         const std::byte* dataPtr = idDataBuffer.data();
-         const std::byte* dataEnd = dataPtr + dataSizeN;
-         int opId = Serializer::read_int(dataPtr, dataEnd); // Re-reads size byte internally, but that's okay.
-
-         // Check consumption (optional but good sanity check)
-          if (dataPtr != dataEnd) {
-             throw std::runtime_error("Operator ID deserialization did not consume entire block.");
-          }
-
-         loadedIds.insert(opId);
+        // 3. Check for consumption and insert into the set.
+        if (dataPtr != dataEnd) {
+           throw std::runtime_error("Operator ID (uint32_t) deserialization did not consume entire block.");
+        }
+        loadedIds.insert(opId);
     }
     return loadedIds;
 }
@@ -458,16 +442,16 @@ bool TimeController::saveState(const std::string& filePath) const {
 
 /**
  * @brief Saves active payloads from a given vector to the output stream.
- * private
+ * @private
  */
 void TimeController::savePayloads(std::ostream& out, const std::vector<Payload>& payloads) const {
-    // Purpose: Write active payloads from vector to stream.
+    // Purpose: Write active payloads from vector to stream using fixed-size serialization.
     // Parameters: stream, payload vector.
     // Return: void. Throws on error.
-    // Key Logic: Iterate vector, if active, serialize, write to stream, check stream state.
     for (const Payload& payload : payloads) {
         if (payload.active) {
-            std::vector<std::byte> payloadBytes = payload.serializeToBytes(); // Includes 1-byte size prefix
+            // This now returns a fixed-size byte vector with no size prefix.
+            std::vector<std::byte> payloadBytes = payload.serializeToBytes(); 
             if (!payloadBytes.empty()) {
                  out.write(reinterpret_cast<const char*>(payloadBytes.data()), payloadBytes.size());
                  if (!out.good()) {
@@ -480,20 +464,18 @@ void TimeController::savePayloads(std::ostream& out, const std::vector<Payload>&
 
 /**
  * @brief Saves operator IDs from the operatorsToProcess set to the output stream.
- * private
+ * @private
  */
 void TimeController::saveOperatorsToProcess(std::ostream& out) const {
-    // Purpose: Write operator IDs from set to stream.
+    // Purpose: Write operator IDs from set to stream using fixed-size serialization.
     // Parameters: stream.
     // Return: void. Throws on error.
-    // Key Logic: Iterate set, serialize ID using appendSizedIntBE, write to stream, check stream state.
-    std::vector<std::byte> idBuffer; // Re-use a small buffer? Or just append directly? Append directly is simpler.
-    for (int opId : this->operatorsToProcess) {
-         // Serialize ID (1-byte size + int bytes BE)
-         idBuffer.clear(); // Clear if reusing buffer
-         Serializer::write(idBuffer, opId); // Use the standard int serialization
+    std::vector<std::byte> idBuffer; 
+    for (uint32_t opId : this->operatorsToProcess) {
+         idBuffer.clear();
+         // Use the uint32_t overload, which writes 4 bytes directly.
+         Serializer::write(idBuffer, opId);
 
-         // Write the serialized ID block
          if (!idBuffer.empty()){
             out.write(reinterpret_cast<const char*>(idBuffer.data()), idBuffer.size());
             if (!out.good()) {
@@ -502,7 +484,6 @@ void TimeController::saveOperatorsToProcess(std::ostream& out) const {
          }
     }
 }
-
 
 
 // --- Printing and displaying ---

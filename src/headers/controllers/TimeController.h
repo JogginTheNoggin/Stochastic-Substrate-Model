@@ -20,19 +20,20 @@ class Scheduler;  	// Can forward declare if only used for pointer type
  * with the Scheduler for event timing. Instantiated externally.
  */
 class TimeController {
-private:
+protected:
 	// Injected dependency (set via constructor)
 	MetaController& metaControllerInstance;
 
+    // TODO "nextPayloads" being moved to "currentPayloads" is not valid as the number of payloads increases.  
 	// Payloads currently being processed in this step
 	std::vector<Payload> currentStepPayloads;
 	// Payloads scheduled to start processing in the next step
 	std::vector<Payload> nextStepPayloads;
 	// IDs of operators that received messages in the previous step and need processData called
-	std::unordered_set<int> operatorsToProcess; // TODO, In order for this to work,  would need to store accumulated data when serializing operator objects. 
+	std::unordered_set<uint32_t> operatorsToProcess; // TODO, In order for this to work,  would need to store accumulated data when serializing operator objects. 
 
 	// Internal step counter (optional)
-	long long currentStep = 0;
+	long long currentStep = 0; // TODO we currently do not store current Step, not really need, but may be nice to have. 
 
 	/**
      * @brief Loads a specific number of payloads from the input stream.
@@ -50,7 +51,7 @@ private:
      * @return std::unordered_set<int> The set of loaded operator IDs.
      * @throws std::runtime_error On read errors, EOF, or parsing errors.
      */
-    std::unordered_set<int> loadOperatorsToProcess(std::istream& in, uint64_t count);
+    std::unordered_set<uint32_t> loadOperatorsToProcess(std::istream& in, uint64_t count);
 
 	/**
      * @brief Saves active payloads from a given vector to the output stream.
@@ -139,7 +140,7 @@ public:
  	 * @note Called by Scheduler::scheduleMessage. Uses MetaController to get pointer,
  	 * calls Operator::message(), and adds ID to operatorsToProcess.
  	 */
-	virtual void deliverAndFlagOperator(int targetOperatorId, int messageData);
+	virtual void deliverAndFlagOperator(uint32_t targetOperatorId, int messageData);
 
 
 	// --- Getters (Optional) ---
