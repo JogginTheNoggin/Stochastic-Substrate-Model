@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
-#include "helpers/TestLayer.h"
-#include "helpers/JsonTestHelpers.h"
 #include "headers/layers/Layer.h"
 #include "headers/operators/AddOperator.h" // Using AddOperator as a concrete operator for tests
-#include "helpers/TestOperator.h" // For testing operator interaction methods
+#include "helpers/MockOperator.h" // For testing operator interaction methods
+#include "helpers/MockLayer.h"
+#include "helpers/JsonTestHelpers.h"
 #include "headers/util/IdRange.h"
 #include "headers/Payload.h" // For testing traverseOperatorPayload
 
@@ -38,13 +38,13 @@ protected:
     // void TearDown() override {}
 
     // Helper to create a simple TestLayer for convenience
-    std::unique_ptr<TestLayer> createTestLayer(LayerType type, uint32_t minId, uint32_t maxId, bool isRangeFinal) {
-        return std::make_unique<TestLayer>(type, new IdRange(minId, maxId), isRangeFinal);
+    std::unique_ptr<MockLayer> createTestLayer(LayerType type, uint32_t minId, uint32_t maxId, bool isRangeFinal) {
+        return std::make_unique<MockLayer>(type, new IdRange(minId, maxId), isRangeFinal);
     }
 
     // Helper to create a simple AddOperator for convenience
-    TestOperator* createTestOperator(uint32_t id) { // why is this even here
-        return new TestOperator(id); // Layer will take ownership
+    MockOperator* createTestOperator(uint32_t id) { // why is this even here
+        return new MockOperator(id); // Layer will take ownership
     }
 };
 
@@ -53,10 +53,10 @@ protected:
 TEST_F(LayerTest, ConstructionAndGetters) {
     // ARRANGE
     IdRange* range1 = new IdRange(0, 99); // TestLayer takes ownership
-    TestLayer layer1(LayerType::INPUT_LAYER, range1, true);
+    MockLayer layer1(LayerType::INPUT_LAYER, range1, true);
 
     IdRange* range2 = new IdRange(100, 199); // TestLayer takes ownership
-    TestLayer layer2(LayerType::INTERNAL_LAYER, range2, false);
+    MockLayer layer2(LayerType::INTERNAL_LAYER, range2, false);
 
     // ACT & ASSERT
     EXPECT_EQ(layer1.getLayerType(), LayerType::INPUT_LAYER);
@@ -95,8 +95,8 @@ TEST_F(LayerTest, ConstructWithHelper) {
 
 TEST_F(LayerTest, AddNewOperatorValid) {
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 10, 20, true);
-    TestOperator* op1 = createTestOperator(10);
-    TestOperator* op2 = createTestOperator(15);
+    MockOperator* op1 = createTestOperator(10);
+    MockOperator* op2 = createTestOperator(15);
 
     ASSERT_NO_THROW(layer->addNewOperator(op1));
     EXPECT_EQ(layer->getOpCount(), 1);
@@ -121,7 +121,7 @@ TEST_F(LayerTest, AddNewOperatorNullPtr) {
 TEST_F(LayerTest, AddNewOperatorDuplicateId) {
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
     layer->addNewOperator(createTestOperator(5));
-    TestOperator* op_duplicate = createTestOperator(5); // Layer won't take ownership if it throws
+    MockOperator* op_duplicate = createTestOperator(5); // Layer won't take ownership if it throws
     EXPECT_THROW(layer->addNewOperator(op_duplicate), std::runtime_error);
     // Manually delete if add failed and test owns it, or ensure fixture handles it.
     // In this case, if addNewOperator throws, it should have deleted op_duplicate.
@@ -136,8 +136,8 @@ TEST_F(LayerTest, AddNewOperatorDuplicateId) {
 
 TEST_F(LayerTest, AddNewOperatorIdOutsideStaticRange) {
     auto layer_static = createTestLayer(LayerType::INTERNAL_LAYER, 10, 20, true);
-    TestOperator* op_below = createTestOperator(9);
-    TestOperator* op_above = createTestOperator(21);
+    MockOperator* op_below = createTestOperator(9);
+    MockOperator* op_above = createTestOperator(21);
 
     EXPECT_THROW(layer_static->addNewOperator(op_below), std::runtime_error);
     EXPECT_THROW(layer_static->addNewOperator(op_above), std::runtime_error);
@@ -163,7 +163,7 @@ TEST_F(LayerTest, AddNewOperatorIdOutsideStaticRange) {
 
 TEST_F(LayerTest, AddNewOperatorIdOutsideDynamicRangeMin) {
     auto layer_dynamic = createTestLayer(LayerType::INTERNAL_LAYER, 10, 20, false); // isRangeFinal = false
-    TestOperator* op_below = createTestOperator(9);
+    MockOperator* op_below = createTestOperator(9);
     // Adding below minID is always an error, even for dynamic layers.
     EXPECT_THROW(layer_dynamic->addNewOperator(op_below), std::runtime_error);
     // delete op_below; // See comment in AddNewOperatorIdOutsideStaticRange
@@ -171,8 +171,8 @@ TEST_F(LayerTest, AddNewOperatorIdOutsideDynamicRangeMin) {
 
 TEST_F(LayerTest, AddNewOperatorIdAboveDynamicRangeExtends) {
     auto layer_dynamic = createTestLayer(LayerType::INTERNAL_LAYER, 10, 20, false); // isRangeFinal = false
-    TestOperator* op_above = createTestOperator(21);
-    TestOperator* op_far_above = createTestOperator(30);
+    MockOperator* op_above = createTestOperator(21);
+    MockOperator* op_far_above = createTestOperator(30);
 
     ASSERT_NO_THROW(layer_dynamic->addNewOperator(op_above));
     EXPECT_EQ(layer_dynamic->getOpCount(), 1);
@@ -188,7 +188,7 @@ TEST_F(LayerTest, AddNewOperatorIdAboveDynamicRangeExtends) {
 
 TEST_F(LayerTest, GetOperator) {
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
-    TestOperator* op1 = createTestOperator(1);
+    MockOperator* op1 = createTestOperator(1);
     layer->addNewOperator(op1);
 
     EXPECT_EQ(layer->getOperator(1), op1);
@@ -387,11 +387,11 @@ TEST_F(LayerTest, IsFullDynamicLayerAtNumericLimit) {
 TEST_F(LayerTest, MessageOperatorValid) {
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
     int opId = 5;
-    TestOperator* testOp = createTestOperator(opId); // Layer takes ownership
+    MockOperator* testOp = createTestOperator(opId); // Layer takes ownership
     layer->addNewOperator(testOp);
     int msg = 123; 
     bool result = layer->messageOperator(opId, msg);
-    EXPECT_EQ(testOp->lastMethodCalled, TestOperator::CalledMethod::MESSAGE_INT);
+    EXPECT_EQ(testOp->lastMethodCalled, MockOperator::CalledMethod::MESSAGE_INT);
     EXPECT_EQ(testOp->lastIntParam, msg);
     EXPECT_TRUE(result);
 }
@@ -405,12 +405,12 @@ TEST_F(LayerTest, MessageOperatorInvalidId) {
 
 TEST_F(LayerTest, ProcessOperatorDataValid) {
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
-    TestOperator* testOp = new TestOperator(7); // Layer takes ownership
+    MockOperator* testOp = new MockOperator(7); // Layer takes ownership
     layer->addNewOperator(testOp);
 
     
     layer->processOperatorData(7);
-    EXPECT_EQ(testOp->lastMethodCalled, TestOperator::CalledMethod::PROCESS_DATA);
+    EXPECT_EQ(testOp->lastMethodCalled, MockOperator::CalledMethod::PROCESS_DATA);
 }
 
 TEST_F(LayerTest, ProcessOperatorDataInvalidId) {
@@ -423,7 +423,7 @@ TEST_F(LayerTest, ProcessOperatorDataInvalidId) {
 TEST_F(LayerTest, TraverseOperatorPayloadValid) {
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
     uint32_t opId = 3;
-    TestOperator* testOp = new TestOperator(opId); // Layer takes ownership
+    MockOperator* testOp = new MockOperator(opId); // Layer takes ownership
     layer->addNewOperator(testOp);
 
     Payload payload;
@@ -431,7 +431,7 @@ TEST_F(LayerTest, TraverseOperatorPayloadValid) {
     payload.active = true;
 
     layer->traverseOperatorPayload(&payload);
-    EXPECT_EQ(testOp->lastMethodCalled, TestOperator::CalledMethod::TRAVERSE);
+    EXPECT_EQ(testOp->lastMethodCalled, MockOperator::CalledMethod::TRAVERSE);
     ASSERT_NE(testOp->lastPayloadParam, nullptr); 
     EXPECT_EQ(*(testOp->lastPayloadParam), payload);
     // Operator has not connections, should return false. 
@@ -537,31 +537,31 @@ TEST_F(LayerTest, DeleteOperatorDynamicLayerNonExistent) {
 
 TEST_F(LayerTest, ChangeOperatorParam) {
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
-    TestOperator* testOp = new TestOperator(5);
+    MockOperator* testOp = new MockOperator(5);
     layer->addNewOperator(testOp);
     std::vector<int> params = {1, 2, 3};
 
     layer->changeOperatorParam(5, params);
-    EXPECT_EQ(testOp->lastMethodCalled, TestOperator::CalledMethod::CHANGE_PARAMS);
+    EXPECT_EQ(testOp->lastMethodCalled, MockOperator::CalledMethod::CHANGE_PARAMS);
 }
 
 TEST_F(LayerTest, AddOperatorConnection) {
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
-    TestOperator* testOp = new TestOperator(5);
+    MockOperator* testOp = new MockOperator(5);
     layer->addNewOperator(testOp);
     uint32_t targetId = 20;
     int distance = 2; 
     std::vector<int> params = {static_cast<int>(targetId), distance}; // targetId = 20, distance = 2
 
     layer->addOperatorConnection(5, params);
-    EXPECT_EQ(testOp->lastMethodCalled, TestOperator::CalledMethod::ADD_CONNECTION_INTERNAL);
+    EXPECT_EQ(testOp->lastMethodCalled, MockOperator::CalledMethod::ADD_CONNECTION_INTERNAL);
     EXPECT_EQ(testOp->lastUint32Param, targetId);
     EXPECT_EQ(testOp->lastIntParam, distance);
 }
 
 TEST_F(LayerTest, RemoveOperatorConnection) {
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
-    TestOperator* testOp = new TestOperator(5);
+    MockOperator* testOp = new MockOperator(5);
     layer->addNewOperator(testOp);
 
     uint32_t removeId = 22;
@@ -571,14 +571,14 @@ TEST_F(LayerTest, RemoveOperatorConnection) {
     
     
     layer->removeOperatorConnection(5, params);
-    EXPECT_EQ(testOp->lastMethodCalled, TestOperator::CalledMethod::REMOVE_CONNECTION_INTERNAL);
+    EXPECT_EQ(testOp->lastMethodCalled, MockOperator::CalledMethod::REMOVE_CONNECTION_INTERNAL);
     EXPECT_EQ(testOp->lastUint32Param, removeId);
     EXPECT_EQ(testOp->lastIntParam, distance);
 }
 
 TEST_F(LayerTest, MoveOperatorConnection) {
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
-    TestOperator* testOp = new TestOperator(5);
+    MockOperator* testOp = new MockOperator(5);
     layer->addNewOperator(testOp);
 
     uint32_t targetId = 25; 
@@ -587,7 +587,7 @@ TEST_F(LayerTest, MoveOperatorConnection) {
     std::vector<int> params = {static_cast<int>(targetId), oldDistance, newDistance}; // targetId = 25, oldDistance = 1, newDistance = 4
     
     layer->moveOperatorConnection(5, params);
-    EXPECT_EQ(testOp->lastMethodCalled, TestOperator::CalledMethod::MOVE_CONNECTION_INTERNAL);
+    EXPECT_EQ(testOp->lastMethodCalled, MockOperator::CalledMethod::MOVE_CONNECTION_INTERNAL);
     EXPECT_EQ(testOp->lastUint32Param, targetId);
     EXPECT_EQ(testOp->prevLastIntParam, oldDistance);
     EXPECT_EQ(testOp->lastIntParam, newDistance);
@@ -645,7 +645,7 @@ TEST_F(LayerTest, SerializeDeserializeEmptyLayer) {
     const std::byte* payload_end = payload_start + payloadSizeBytes;
     ASSERT_LE(payload_end, data_end); // Ensure payload size doesn't exceed available data
 
-    auto deserialized_layer = std::make_unique<TestLayer>(fileLayerType, nullptr, fileIsRangeFinal); // Range will be created by deserialize
+    auto deserialized_layer = std::make_unique<MockLayer>(fileLayerType, nullptr, fileIsRangeFinal); // Range will be created by deserialize
 
     // Use the test_deserialize helper
     deserialized_layer->test_deserialize(data_ptr, payload_end); // data_ptr is advanced by deserialize
@@ -693,7 +693,7 @@ TEST_F(LayerTest, SerializeDeserializeLayerWithOperators) {
 
     // Use the deserialization constructor of our TestLayer helper.
     // Pass the correct end pointer for the payload.
-    auto deserialized_layer = std::make_unique<TestLayer>(fileLayerType, fileIsRangeFinal, data_ptr, payload_data_end); 
+    auto deserialized_layer = std::make_unique<MockLayer>(fileLayerType, fileIsRangeFinal, data_ptr, payload_data_end); 
 
 
     // ASSERT: Verify that the deserialized layer is identical to the original.
@@ -709,7 +709,7 @@ TEST_F(LayerTest, DeserializeCorruptedPayloadSize) {
     // ARRANGE: Manually construct a valid byte stream for a layer, then corrupt its size field.
 
     // 1. Create a minimal, valid operator data block.
-    TestOperator test_op(100);
+    MockOperator test_op(100);
     std::vector<std::byte> operator_block = test_op.serializeToBytes();
 
     // 2. Create the layer's data payload.
@@ -744,7 +744,7 @@ TEST_F(LayerTest, DeserializeCorruptedPayloadSize) {
     // buffer (`data_end`), causing the internal Serializer::read_... call to fail with a
     // bounds check error.
     EXPECT_THROW({
-        TestLayer deserialized_layer(fileLayerType, fileIsRangeFinal, data_ptr, data_end);
+        MockLayer deserialized_layer(fileLayerType, fileIsRangeFinal, data_ptr, data_end);
     }, std::runtime_error);
 }
 
@@ -826,7 +826,7 @@ TEST_F(LayerTest, EqualityOperatorDifferentOperatorTypes) {
 
     auto layer2 = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
     // Construct the TestOperator with the specific type we want it to report.
-    layer2->addNewOperator(new TestOperator(1, Operator::Type::IN));
+    layer2->addNewOperator(new MockOperator(1, Operator::Type::IN));
 
     // The non-member operator== will call getOpType() on both.
     // It will see ADD != IN and correctly return false.
@@ -835,12 +835,12 @@ TEST_F(LayerTest, EqualityOperatorDifferentOperatorTypes) {
 
 TEST_F(LayerTest, EqualityOperatorDifferentOperatorConnections) {
     auto layer1 = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
-    TestOperator* op1_l1 = createTestOperator(1);
+    MockOperator* op1_l1 = createTestOperator(1);
     op1_l1->addConnectionInternal(5,1);
     layer1->addNewOperator(op1_l1);
 
     auto layer2 = createTestLayer(LayerType::INTERNAL_LAYER, 0, 10, true);
-    TestOperator* op1_l2 = createTestOperator(1); // Same ID, same type
+    MockOperator* op1_l2 = createTestOperator(1); // Same ID, same type
     // op1_l2 has no connections
     layer2->addNewOperator(op1_l2);
 
@@ -852,9 +852,9 @@ TEST_F(LayerTest, EqualityOperatorNullReservedRange) {
     // Create layers where reservedRange might be null before deserialize is called.
     // TestLayer constructor used in createTestLayer always creates an IdRange.
     // The specific constructor TestLayer(type, nullptr, isFinal) is used in deserialize tests.
-    TestLayer layer1(LayerType::INTERNAL_LAYER, new IdRange(0,10), true);
-    TestLayer layer2(LayerType::INTERNAL_LAYER, nullptr, true); // No IdRange initially
-    TestLayer layer3(LayerType::INTERNAL_LAYER, nullptr, true); // No IdRange initially
+    MockLayer layer1(LayerType::INTERNAL_LAYER, new IdRange(0,10), true);
+    MockLayer layer2(LayerType::INTERNAL_LAYER, nullptr, true); // No IdRange initially
+    MockLayer layer3(LayerType::INTERNAL_LAYER, nullptr, true); // No IdRange initially
 
     EXPECT_FALSE(layer1 == layer2);
     EXPECT_TRUE(layer1 != layer2);
@@ -886,7 +886,7 @@ TEST_F(LayerTest, MoveConstructor) {
 
 
     // ACT: Move construct
-    TestLayer moved_layer(std::move(*original_layer_ptr));
+    MockLayer moved_layer(std::move(*original_layer_ptr));
 
     // ASSERT: Moved-to object (moved_layer) has the state of the original
     EXPECT_EQ(moved_layer.getLayerType(), original_type);
@@ -975,11 +975,11 @@ TEST_F(LayerTest, ToJsonWithOperatorsPretty) {
     // Note: LayerType::INTERNAL_LAYER is 2, matching the golden file.
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 100, 110, false);
 
-    TestOperator* op1 = createTestOperator(101);
+    MockOperator* op1 = createTestOperator(101);
     op1->addConnectionInternal(105, 1); // Add a connection to op1
     layer->addNewOperator(op1);
 
-    TestOperator* op2 = createTestOperator(102); // op2 has no connections
+    MockOperator* op2 = createTestOperator(102); // op2 has no connections
     layer->addNewOperator(op2);
 
     std::string goldenOutput = JsonTestHelpers::readGoldenFile(MOCK_FILE_DIR + "layer_with_operators.json");
@@ -995,11 +995,11 @@ TEST_F(LayerTest, ToJsonWithOperatorsCompact) {
     // ARRANGE
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 100, 110, false);
 
-    TestOperator* op1 = createTestOperator(101);
+    MockOperator* op1 = createTestOperator(101);
     op1->addConnectionInternal(105, 1);
     layer->addNewOperator(op1);
 
-    TestOperator* op2 = createTestOperator(102);
+    MockOperator* op2 = createTestOperator(102);
     layer->addNewOperator(op2);
 
     std::string goldenOutput = JsonTestHelpers::readGoldenFile(MOCK_FILE_DIR + "layer_with_operators_compact.json");
@@ -1015,10 +1015,10 @@ TEST_F(LayerTest, ToJsonOperatorOrderIsDeterministic) {
     // ARRANGE: Add operators in non-ID order to test if toJson sorts them by ID
     auto layer = createTestLayer(LayerType::INTERNAL_LAYER, 100, 110, false);
 
-    TestOperator* op2 = createTestOperator(102); // Added first
+    MockOperator* op2 = createTestOperator(102); // Added first
     layer->addNewOperator(op2);
 
-    TestOperator* op1 = createTestOperator(101); // Added second
+    MockOperator* op1 = createTestOperator(101); // Added second
     op1->addConnectionInternal(105, 1);
     layer->addNewOperator(op1);
 

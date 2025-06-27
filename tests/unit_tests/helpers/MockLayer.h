@@ -13,7 +13,7 @@
  * serializeToBytes, equals, etc.) in isolation from the more complex logic of subclasses
  * like InternalLayer or InputLayer.
  */
-class TestLayer : public Layer {
+class MockLayer : public Layer {
 public:
     /**
      * @brief Constructor that passes arguments up to the protected Layer base class constructor.
@@ -21,11 +21,11 @@ public:
      * @param range A pointer to the heap-allocated IdRange for this layer.
      * @param isRangeFinal A flag indicating if the layer's ID range is static or dynamic.
      */
-    TestLayer(LayerType type, IdRange* range, bool isRangeFinal)
+    MockLayer(LayerType type, IdRange* range, bool isRangeFinal)
         : Layer(type, range, isRangeFinal) {}
 
     // NEW: Deserialization constructor for testing
-    TestLayer(LayerType type, bool isRangeFinal, const std::byte*& data, const std::byte* dataEnd)
+    MockLayer(LayerType type, bool isRangeFinal, const std::byte*& data, const std::byte* dataEnd)
         : Layer(type, isRangeFinal) {
         // This constructor calls the protected Layer constructor and then
         // calls the protected deserialize method to populate the object.

@@ -6,7 +6,7 @@
 // --- Test-Only Subclass ---
 // The only purpose of this class is to allow us to create an instance of the
 // abstract Operator class so we can test its concrete public methods in isolation.
-class TestOperator : public Operator {
+class MockOperator : public Operator {
 public:
     // Inherit the base class constructor
     using Operator::Operator;
@@ -38,11 +38,11 @@ public:
     // --- Constructors ---
     // Constructor for programmatic creation (matches Operator(uint32_t id))
     // Also allows setting a type for tests that might need it (e.g., equality checks)
-    TestOperator(uint32_t id, Type type = Operator::Type::UNDEFINED) 
+    MockOperator(uint32_t id, Type type = Operator::Type::UNDEFINED) 
         : Operator(id), mock_type(type) {}
 
     // Deserialization constructor (matches Operator(const std::byte*&, const std::byte*))
-    TestOperator(const std::byte*& current, const std::byte* end) 
+    MockOperator(const std::byte*& current, const std::byte* end) 
         : Operator(current, end), mock_type(Operator::Type::UNDEFINED) {
         // Note: The actual type would be read by Operator's deserialization constructor
         // if it were part of the base class's serialized data. Here, we just give it a default.

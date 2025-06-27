@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "helpers/TestOperator.h"
+#include "helpers/MockOperator.h"
 #include "headers/operators/Operator.h"
 #include <memory>
 #include "headers/util/DynamicArray.h"
@@ -9,7 +9,7 @@ class OperatorAddConnectionTest : public ::testing::Test {
 };
 
 TEST_F(OperatorAddConnectionTest, AddConnectionInternalBasic) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(1);
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(1);
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(100, 2); // Target ID 100, distance 2
@@ -25,7 +25,7 @@ TEST_F(OperatorAddConnectionTest, AddConnectionInternalBasic) {
 }
 
 TEST_F(OperatorAddConnectionTest, AddConnectionInternalMultipleAtSameDistance) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(2);
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(2);
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(200, 3);
@@ -43,7 +43,7 @@ TEST_F(OperatorAddConnectionTest, AddConnectionInternalMultipleAtSameDistance) {
 }
 
 TEST_F(OperatorAddConnectionTest, AddConnectionInternalMultipleAtDifferentDistances) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(3);
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(3);
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(300, 1);
@@ -65,7 +65,7 @@ TEST_F(OperatorAddConnectionTest, AddConnectionInternalMultipleAtDifferentDistan
 }
 
 TEST_F(OperatorAddConnectionTest, AddConnectionInternalToExistingBucket) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(4);
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(4);
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(400, 2);
@@ -83,7 +83,7 @@ TEST_F(OperatorAddConnectionTest, AddConnectionInternalToExistingBucket) {
 }
 
 TEST_F(OperatorAddConnectionTest, AddConnectionInternalNegativeDistance) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(5);
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(5);
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(500, -1);
@@ -94,7 +94,7 @@ TEST_F(OperatorAddConnectionTest, AddConnectionInternalNegativeDistance) {
 }
 
 TEST_F(OperatorAddConnectionTest, AddConnectionInternalZeroDistance) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(6);
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(6);
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(600, 0);

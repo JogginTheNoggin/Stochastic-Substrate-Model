@@ -23,6 +23,69 @@
       "preLaunchTask": "build"
     },
     {
+      "name": "Debug CliTests.exe",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/AthenaTests/CliTests.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/AthenaTests",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug ControllerTests_MetaController.exe",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/AthenaTests/ControllerTests_MetaController.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/AthenaTests",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
+      "name": "Debug ControllerTests_TimeController.exe",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/AthenaTests/ControllerTests_TimeController.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/AthenaTests",
+      "environment": [],
+      "externalConsole": true,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "text": "-gdb-set new-console on"
+        },
+        {
+          "text": "-enable-pretty-printing"
+        }
+      ],
+      "preLaunchTask": "build"
+    },
+    {
       "name": "Debug LayerTests_InputLayer.exe",
       "type": "cppdbg",
       "request": "launch",

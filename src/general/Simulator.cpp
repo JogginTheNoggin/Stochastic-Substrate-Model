@@ -7,6 +7,9 @@
 #include <iostream>      // For basic logging/output
 #include <stdexcept>     // For exception handling during init
 
+
+
+
 Simulator::Simulator(int numberOfOperators): 
     metaController(numberOfOperators), 
     updateController(metaController), 
@@ -44,7 +47,7 @@ Simulator::~Simulator()
     writer << "Simulator shutting down..." << std::endl;
     // Controllers are automatically destroyed here.
     // Assumes Schedulers are reset globally.
-    writer << "Final Operator count from MetaController: " << metaController.getTotalOperatorCount() << std::endl;
+    // writer << "Final Operator count from MetaController: " << metaController.getOpCount() << std::endl;
     writer << "Simulator finished." << std::endl;
     writer << "Simulator shutting down..." << std::endl;
 }
@@ -72,7 +75,7 @@ void Simulator::init() {
     // If MetaController setup *does* queue events, the first ProcessUpdates() inside run() will handle them.
     ConsoleWriter writer; // used to ensure prints uninterrupted
     writer << "Simulator initialized." << std::endl;
-    writer << "Initial Operator count from MetaController: " << metaController.getTotalOperatorCount() << std::endl;
+    writer << "Initial Operator count from MetaController: " << metaController.getOpCount() << std::endl;
 }
 
 
@@ -87,20 +90,47 @@ void Simulator::loadConfiguration(const std::string& filePath) {
     }
     std::lock_guard<std::mutex> lock(simMutex);
     metaController.loadConfiguration(filePath);
-    if (metaController.getTotalOperatorCount() == 0) {
+    if (metaController.isEmpty()) {
         hasNetwork = true;
     }
 }
 
+// TODO may also need to save update state in future
+// TODO needs to also save the timeController information, which holds payloads etc
 void Simulator::saveConfiguration(const std::string& filePath) const {
     // Purpose: To save the current network configuration to a file.
     // Parameters: @param filePath - The path where the file will be saved.
     // Return: Void.
     // Key Logic: Acquires a lock for thread-safe access to the MetaController, then delegates the call.
+    if(!hasNetwork){
+        return; // only attempt save if network present
+    }
     std::lock_guard<std::mutex> lock(simMutex);
     metaController.saveConfiguration(filePath);
     
 }
+
+void Simulator::loadState(const std::string& filePath){
+    if(!hasNetwork){
+        return; // only attempt save if network present
+    }
+    std::lock_guard<std::mutex> lock(simMutex);
+    timeController.loadState(filePath);
+}
+
+void Simulator::saveState(const std::string& filePath)const{
+    // Purpose: To save the current network state to a file.
+    // Parameters: @param filePath - The path where the file will be saved.
+    // Return: Void.
+    // Key Logic: Acquires a lock for thread-safe access to the TimeController, then delegates the call.
+    if(!hasNetwork){
+        return; // only attempt save if network present
+    }
+    std::lock_guard<std::mutex> lock(simMutex);
+    timeController.saveState(filePath);
+}
+
+
 
 void Simulator::createNewNetwork(int numOperators) {
     // Purpose: To create a new, randomly generated network.
@@ -114,7 +144,7 @@ void Simulator::createNewNetwork(int numOperators) {
     std::lock_guard<std::mutex> lock(simMutex);
     Randomizer r;
     metaController.randomizeNetwork(numOperators, &r);
-    if (metaController.getTotalOperatorCount() == 0) {
+    if (metaController.isEmpty()) {
         hasNetwork = true;
     }
 }
@@ -283,13 +313,9 @@ void Simulator::submitText(const std::string& text) {
     // Return: Void.
     // Key Logic: Acquires a lock, iterates through the layers managed by MetaController to find an InputLayer instance, and calls its `inputText` method.
     std::lock_guard<std::mutex> lock(simMutex);
-    for (const auto& layerPtr : metaController.getAllLayers()) { // TODO not efficient but good enough with only 3 layers
-        if (auto* inputLayer = dynamic_cast<InputLayer*>(layerPtr.get())) {
-            inputLayer->inputText(text);
-            return;
-        }
+    if(!metaController.inputText(text)) {
+        ConsoleWriter() << "Warning: No InputLayer found to submit text." << std::endl;
     }
-    ConsoleWriter() << "Warning: No InputLayer found to submit text." << std::endl;
 }
 
 std::string Simulator::getOutput() {
@@ -298,12 +324,7 @@ std::string Simulator::getOutput() {
     // Return: @return The output string.
     // Key Logic: Acquires a lock, iterates through layers to find an OutputLayer instance, and calls its `getTextOutput` method. 
     std::lock_guard<std::mutex> lock(simMutex);
-    for (const auto& layerPtr : metaController.getAllLayers()) { // TODO not efficient but good enough with only 3 layers
-        if (auto* outputLayer = dynamic_cast<OutputLayer*>(layerPtr.get())) {
-            return outputLayer->hasTextOutput()? outputLayer->getTextOutput() : "[ No New Output Text. ]";
-        }
-    }
-    return "[No OutputLayer found]";
+    return metaController.getOutput();;
 }
 
 SimulationStatus Simulator::getStatus() const {
@@ -316,7 +337,7 @@ SimulationStatus Simulator::getStatus() const {
         timeController.getCurrentStep(),
         timeController.getActivePayloadCount(),
         updateController.QueueSize(),
-        metaController.getTotalOperatorCount(),
+        metaController.getOpCount(),
         metaController.getLayerCount()
     };
 }
@@ -330,7 +351,7 @@ SimulationStatus Simulator::getStatusNoLock() const {
         timeController.getCurrentStep(),
         timeController.getActivePayloadCount(),
         updateController.QueueSize(),
-        metaController.getTotalOperatorCount(),
+        metaController.getOpCount(),
         metaController.getLayerCount()
     };
 }

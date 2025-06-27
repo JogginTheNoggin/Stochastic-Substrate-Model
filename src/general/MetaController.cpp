@@ -12,6 +12,28 @@
 #include <iostream>  // For std::cout used in printOperators
 
 // --- Constructor & State Management ---
+// custom randomizer, primarily for testing
+MetaController::MetaController(int numOperators, Randomizer* randomizer): rand(randomizer) {
+    randomizeNetwork(numOperators, rand); 
+
+
+    // below is unnecessary based on how randomizeNetwork is but is done for safe keeping
+    // (Below is Repeated Code, also in load configure) 
+    // Step 1: Sort the newly loaded layers into their canonical order.
+    sortLayers(); 
+
+    // Step 2: Perform system-wide validation on the sorted layers.
+    try {
+        validateLayerIdSpaces();
+    } catch (const std::runtime_error& e) {
+        clearAllLayers(); // Validation failed, do not keep the invalid state.
+        throw; // Re-throw the validation error.
+    }
+
+}
+
+
+
 
 MetaController::MetaController(int numOperators){
     rand = new Randomizer();
@@ -186,7 +208,7 @@ size_t MetaController::getLayerCount() const {
  * @brief Gets the total number of operators across all layers in the network.
  * @return size_t The total operator count.
  */
-size_t MetaController::getTotalOperatorCount() const {
+size_t MetaController::getOpCount() const {
     // Purpose: Calculate the total number of operators in the entire network.
     // Parameters: None.
     // Return: The total count.
@@ -315,7 +337,7 @@ Layer* MetaController::findLayerForOperator(uint32_t operatorId) const {
 }
 
 Layer* MetaController::getDynamicLayer(){
-    return layers.back().get();;
+    return layers.back().get();
 }
 
 // operator processing
@@ -430,6 +452,33 @@ void MetaController::handleMoveConnection(uint32_t targetOperatorId, const std::
     }
 }
 
+// input and output
+std::string MetaController::getOutput() const{
+    for (const auto& layerPtr : layers) { // TODO not efficient but good enough with only 3 layers
+        if (auto* outputLayer = dynamic_cast<OutputLayer*>(layerPtr.get())) {
+            return outputLayer->hasTextOutput()? outputLayer->getTextOutput() : "[ No New Output Text. ]";
+        }
+    }
+
+    return "[ No New Output Text. ]";
+}
+
+
+bool MetaController::inputText(std::string text){
+    for (const auto& layerPtr : layers) { // TODO not efficient but good enough with only 3 layers
+        if (auto* inputLayer = dynamic_cast<InputLayer*>(layerPtr.get())) {
+            inputLayer->inputText(text);
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool MetaController::isEmpty() const {
+    return getOpCount() == 0; 
+}
+
 
 // --- Persistence ---
 
@@ -482,6 +531,7 @@ bool MetaController::loadConfiguration(const std::string& filePath) {
 
     std::ifstream inFile(filePath, std::ios::binary | std::ios::ate); // Open at end to get size
     if (!inFile.is_open()) {
+        throw std::runtime_error("Failed to open file: " + filePath);
         // Optional: Log error
         return false;
     }
@@ -497,6 +547,7 @@ bool MetaController::loadConfiguration(const std::string& filePath) {
     // TODO Acknowledges that this isn't suitable for multi-gigabyte files.
     std::vector<std::byte> fileBuffer(totalFileSize);
     if (!inFile.read(reinterpret_cast<char*>(fileBuffer.data()), totalFileSize)) {
+        throw std::runtime_error("Failed to read file into buffer: " + filePath);
         return false; // Failed to read file into buffer
     }
     inFile.close();
@@ -568,7 +619,7 @@ bool MetaController::loadConfiguration(const std::string& filePath) {
 }
 
 
-
+// TODO formatting likely off.
 std::string MetaController::getOperatorsAsJson(bool prettyPrint) const{
     std::ostringstream oss;
     std::string newline = prettyPrint ? "\n" : "";
@@ -588,7 +639,7 @@ std::string MetaController::getOperatorsAsJson(bool prettyPrint) const{
 
         // Call the layer's toJson method and append its output to the stream.
         // The Layer's own toJson handles its internal formatting.
-        oss << layerPtr->toJson(prettyPrint);
+        oss << layerPtr->toJson(prettyPrint, 1);
         
         firstLayer = false;
     }

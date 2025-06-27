@@ -511,12 +511,12 @@ void Layer::deleteOperator(uint32_t targetOperatorId) {  // TODO temporary, meth
 }
 
 // TODO maybe add enclosed bool option for allow subclass layers to append own layer specific data after the base class layer data.  
-std::string Layer::toJson(bool prettyPrint) const{
+std::string Layer::toJson(bool prettyPrint, int depth) const{
     std::ostringstream oss;
     std::string indent = prettyPrint ? "  " : "";
     std::string newline = prettyPrint ? "\n" : "";
     std::string space = prettyPrint ? " " : "";
-    int opIndentLevel = prettyPrint? 2 : 0; // for proper nesting of operators json
+    int opIndentLevel = prettyPrint? 2 + depth : 0; // for proper nesting of operators json
 
     oss << "{" << newline;
 

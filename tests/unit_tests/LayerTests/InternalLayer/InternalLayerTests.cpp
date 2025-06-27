@@ -5,7 +5,7 @@
 #include "helpers/JsonTestHelpers.h" // For potential future use or complex state verification
 #include "headers/operators/AddOperator.h"
 #include "headers/operators/InOperator.h" // Needed for equality test
-#include "helpers/TestOperator.h"       // For verifying operator interactions if needed
+#include "helpers/MockOperator.h"       // For verifying operator interactions if needed
 #include "headers/util/Serializer.h" // For manually crafting byte streams
 
 #include <vector>
@@ -81,13 +81,14 @@ TEST_F(InternalLayerTest, ProgrammaticConstructor_NullRange) {
 // TODO currently only works with AddOperator given the number of values needed to generate
 // TODO add support for TestOperator if possible instead of relying on AddOperator (not essential)
 TEST_F(InternalLayerTest, RandomInit_BasicInitialization_DynamicLayer) {
-    IdRange* layerRange = new IdRange(100, 110);
+    int opCount = 5;
+    int minId = 100;
+    IdRange* layerRange = new IdRange(minId, minId + opCount - 1);
     InternalLayer dynamicLayer(false, layerRange);
-
-    mockRandomizer->setNextInt(5); // 1. Create 5 operators.
+    
 
     // 2. For each AddOperator's randomInit, provide mocks for all random calls.
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < opCount; ++i) {
         mockRandomizer->setNextInt(10);  // for threshold
         mockRandomizer->setNextInt(20);  // for weight
         mockRandomizer->setNextInt(1);   // for number of connections
@@ -113,7 +114,7 @@ TEST_F(InternalLayerTest, RandomInit_BasicInitialization_DynamicLayer) {
     EXPECT_TRUE(expectedIds.empty()) << "Not all expected operator IDs were created.";
 
     // 1 call for numOps, 5 calls per operator
-    EXPECT_EQ(mockRandomizer->getIntCallCount(), 1 + (5 * 5));
+    EXPECT_EQ(mockRandomizer->getIntCallCount(), (opCount * 5));
 
     delete connectionRange;
 }
@@ -125,7 +126,7 @@ TEST_F(InternalLayerTest, RandomInit_StaticLayer_RespectsCapacity) {
     IdRange* layerRange = new IdRange(10, 12);
     InternalLayer staticLayer(true, layerRange);
 
-    mockRandomizer->setNextInt(3);
+
 
     for (int i = 0; i < 3; ++i) {
         mockRandomizer->setNextInt(10); // for threshold
@@ -147,17 +148,16 @@ TEST_F(InternalLayerTest, RandomInit_StaticLayer_RespectsCapacity) {
     }
     
     // 1 call for numOps, 3 calls per operator
-    EXPECT_EQ(mockRandomizer->getIntCallCount(), 1 + (3 * 3));
+    EXPECT_EQ(mockRandomizer->getIntCallCount(), (3 * 3));
 
     delete connectionRange;
 }
 
 
 TEST_F(InternalLayerTest, RandomInit_NullConnectionRange) {
-    IdRange* layerRange = new IdRange(500, 502);
+    IdRange* layerRange = new IdRange(500, 500);
     InternalLayer layer(false, layerRange);
 
-    mockRandomizer->setNextInt(1); // Create 1 operator
 
     // Provide mocks for AddOperator::randomInit calls.
     // It will still randomize threshold and weight.
@@ -173,7 +173,7 @@ TEST_F(InternalLayerTest, RandomInit_NullConnectionRange) {
     EXPECT_EQ(layer.getOperator(500)->getOpType(), Operator::Type::ADD);
     
     // Expected calls: 1 (numOps) + 3 for the operator (thresh, weight, num_conn)
-    EXPECT_EQ(mockRandomizer->getIntCallCount(), 1 + 3);
+    EXPECT_EQ(mockRandomizer->getIntCallCount(), 3);
 }
 
 // --- Deserialization Constructor Tests ---

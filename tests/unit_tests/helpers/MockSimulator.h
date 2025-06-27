@@ -20,6 +20,8 @@ public:
         NONE,
         LOAD_CONFIG,
         SAVE_CONFIG,
+        LOAD_STATE,
+        SAVE_STATE,
         NEW_NETWORK,
         RUN_STEPS,
         RUN_INACTIVE,
@@ -86,6 +88,22 @@ public:
         auto* nonConstThis = const_cast<MockSimulator*>(this);
         nonConstThis->callCount++;
         nonConstThis->lastCall = LastCall::SAVE_CONFIG;
+        nonConstThis->lastPath = filePath;
+    }
+
+    void loadState(const std::string& filePath) override {
+        std::lock_guard<std::mutex> lock(mockMutex);
+        callCount++;
+        lastCall = LastCall::LOAD_STATE;
+        lastPath = filePath;
+    }
+    
+    void saveState(const std::string& filePath) const override {
+        std::lock_guard<std::mutex> lock(mockMutex);
+        // We need to cast away constness to modify mock state in a const method.
+        auto* nonConstThis = const_cast<MockSimulator*>(this);
+        nonConstThis->callCount++;
+        nonConstThis->lastCall = LastCall::SAVE_STATE;
         nonConstThis->lastPath = filePath;
     }
 

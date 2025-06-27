@@ -3,6 +3,7 @@
 ## `src/`
 - general/
   - AddOperator.cpp
+  - CLI.cpp
   - InOperator.cpp
   - InputLayer.cpp
   - InternalLayer.cpp
@@ -26,6 +27,8 @@
   - UpdateEvent.h
   - UpdateScheduler.h
   - all_controllers.h
+  - cli/
+    - CLI.h
   - controllers/
     - MetaController.h
     - TimeController.h
@@ -43,6 +46,7 @@
     - OutOperator.h
     - all_operators.h
   - util/
+    - Console.h
     - DynamicArray.h
     - IdRange.h
     - Randomizer.h
@@ -56,6 +60,15 @@
     - CTestCostData.txt
     - LastTest.log
 - unit_tests/
+  - CliTests/
+    - CLITests.cpp
+  - ControllerTests/
+    - MetaController/
+      - MetaControllerTests.cpp
+      - golden_files/
+        - zero_internal_operators.json
+    - TimeController/
+      - TimeControllerTests.cpp
   - LayerTests/
     - InputLayer/
       - InputLayerTests.cpp
@@ -124,6 +137,10 @@
       - SerializerTests.cpp
   - helpers/
     - JsonTestHelpers.h
+    - MockLayer.h
+    - MockMetaController.h
+    - MockOperator.h
     - MockRandomizer.h
-    - TestLayer.h
-    - TestOperator.h
+    - MockSimulator.h
+    - MockTimeController.h
+    - MockUpdateController.h

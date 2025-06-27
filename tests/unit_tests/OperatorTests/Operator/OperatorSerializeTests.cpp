@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "helpers/TestOperator.h" // Changed
+#include "helpers/MockOperator.h" // Changed
 #include "headers/operators/Operator.h"
 #include "headers/util/Serializer.h" // Required for TestOperator connection setup (addConnectionInternal)
 #include <memory>
@@ -41,7 +41,7 @@ class OperatorSerializeTest : public ::testing::Test {
 };
 
 TEST_F(OperatorSerializeTest, SerializeNoConnections) {
-    auto op = std::make_unique<TestOperator>(123); // TestOperator ID 123
+    auto op = std::make_unique<MockOperator>(123); // TestOperator ID 123
 
     std::vector<std::byte> actualBytes = op->baseClassSerializeToBytes(); // Calls Operator::serializeToBytes
 
@@ -52,7 +52,7 @@ TEST_F(OperatorSerializeTest, SerializeNoConnections) {
 }
 
 TEST_F(OperatorSerializeTest, SerializeOneConnection) {
-    auto op = std::make_unique<TestOperator>(124); // TestOperator ID 124
+    auto op = std::make_unique<MockOperator>(124); // TestOperator ID 124
     op->addConnectionInternal(200, 2); // Target 200, distance 2
 
     std::vector<std::byte> actualBytes = op->baseClassSerializeToBytes();
@@ -64,7 +64,7 @@ TEST_F(OperatorSerializeTest, SerializeOneConnection) {
 }
 
 TEST_F(OperatorSerializeTest, SerializeMultipleConnectionsSameDistance) {
-    auto op = std::make_unique<TestOperator>(125); // TestOperator ID 125
+    auto op = std::make_unique<MockOperator>(125); // TestOperator ID 125
     // Add in specific order to test sorting of target IDs by Operator::serializeToBytes
     op->addConnectionInternal(301, 1);
     op->addConnectionInternal(300, 1);
@@ -78,7 +78,7 @@ TEST_F(OperatorSerializeTest, SerializeMultipleConnectionsSameDistance) {
 }
 
 TEST_F(OperatorSerializeTest, SerializeMultipleConnectionsDifferentDistances) {
-    auto op = std::make_unique<TestOperator>(126); // TestOperator ID 126
+    auto op = std::make_unique<MockOperator>(126); // TestOperator ID 126
     // Add in specific order to test sorting of distance buckets by Operator::serializeToBytes
     op->addConnectionInternal(401, 3);
     op->addConnectionInternal(402, 3); // Second target for distance 3

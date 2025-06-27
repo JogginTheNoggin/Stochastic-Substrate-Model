@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "helpers/JsonTestHelpers.h"         // For readGoldenFile
-#include "helpers/TestOperator.h" // Using TestOperator to test Operator's toJson
+#include "helpers/MockOperator.h" // Using TestOperator to test Operator's toJson
 #include "headers/operators/Operator.h"
 #include <memory>
 #include <string>
@@ -17,7 +17,7 @@ namespace {
 
 TEST_F(OperatorJsonTest, ToJsonNoConnections) {
     // ARRANGE: Use AddOperator as the concrete class to test the base Operator::toJson
-    std::unique_ptr<Operator> op = std::make_unique<TestOperator>(123);
+    std::unique_ptr<Operator> op = std::make_unique<MockOperator>(123);
     std::string goldenOutput = JsonTestHelpers::readGoldenFile(MOCK_FILE_DIR + "operator_no_connections.json");
 
     // ACT: Call toJson with pretty-printing and enclosing brackets
@@ -29,7 +29,7 @@ TEST_F(OperatorJsonTest, ToJsonNoConnections) {
 
 TEST_F(OperatorJsonTest, ToJsonOneConnectionOneDistance) {
     // ARRANGE
-    std::unique_ptr<Operator> op = std::make_unique<TestOperator>(124);
+    std::unique_ptr<Operator> op = std::make_unique<MockOperator>(124);
     op->addConnectionInternal(200, 2);
     std::string goldenOutput = JsonTestHelpers::readGoldenFile(MOCK_FILE_DIR + "operator_one_connection.json");
 
@@ -42,7 +42,7 @@ TEST_F(OperatorJsonTest, ToJsonOneConnectionOneDistance) {
 
 TEST_F(OperatorJsonTest, ToJsonMultipleConnectionsOneDistance) {
     // ARRANGE: Add connections out of order to test sorting of target IDs
-    std::unique_ptr<Operator> op = std::make_unique<TestOperator>(125);
+    std::unique_ptr<Operator> op = std::make_unique<MockOperator>(125);
     op->addConnectionInternal(301, 1);
     op->addConnectionInternal(300, 1);
     std::string goldenOutput = JsonTestHelpers::readGoldenFile(MOCK_FILE_DIR + "operator_multi_conn_same_dist.json");
@@ -56,7 +56,7 @@ TEST_F(OperatorJsonTest, ToJsonMultipleConnectionsOneDistance) {
 
 TEST_F(OperatorJsonTest, ToJsonMultipleConnectionsMultipleDistances) {
     // ARRANGE: Add distance buckets out of order to test sorting of buckets
-    std::unique_ptr<Operator> op = std::make_unique<TestOperator>(126);
+    std::unique_ptr<Operator> op = std::make_unique<MockOperator>(126);
     op->addConnectionInternal(401, 3);
     op->addConnectionInternal(400, 0);
     op->addConnectionInternal(402, 3);
@@ -71,7 +71,7 @@ TEST_F(OperatorJsonTest, ToJsonMultipleConnectionsMultipleDistances) {
 
 TEST_F(OperatorJsonTest, ToJsonNoEnclosingBrackets) {
     // ARRANGE: For fragments, a hardcoded string is more practical than a golden file.
-    std::unique_ptr<Operator> op = std::make_unique<TestOperator>(127);
+    std::unique_ptr<Operator> op = std::make_unique<MockOperator>(127);
     op->addConnectionInternal(500, 1);
 
     // Use a C++ raw string literal (R"()") for clean multi-line strings

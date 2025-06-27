@@ -195,7 +195,7 @@ public:
  	 * @return std::string A string containing the Layers's state formatted as JSON.
  	 * @note Key Logic Steps: Constructs a JSON object string. Includes key-value pairs."
      */
-    std::string toJson(bool prettyPrint = false) const;
+    std::string toJson(bool prettyPrint = false, int depth = 0) const;
 
 
     /**

@@ -77,6 +77,9 @@ private:
     std::atomic<bool> hasNetwork{false}; 
     std::atomic<int> logFrequency{10}; 
 public:
+
+
+
     /**
      * @brief Constructor for the Simulator class.
      * @details Instantiates the core controllers, injecting dependencies,
@@ -117,6 +120,22 @@ public:
      * @details This method is thread-safe and can be called while the simulation is paused.
      */
     virtual void saveConfiguration(const std::string& filePath) const;
+
+
+    /**
+     * @brief Saves the current network state (payloads) to a file.
+     * @param filePath The path where the state file will be saved. 
+     * @details This method is thread-safe and can be called while the simulation is paused.
+     */
+    virtual void saveState(const std::string& filePath) const;
+
+
+    /**
+     * @brief Loads a network state from a file, replacing the current one.
+     * @param filePath The path to the state file. 
+     * @details This method is thread-safe.
+     */
+    virtual void loadState(const std::string& filePath);
 
     /**
      * @brief Creates a new, randomly initialized network, replacing the current one.

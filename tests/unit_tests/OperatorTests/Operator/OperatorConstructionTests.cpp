@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "helpers/TestOperator.h" // Corrected include path
+#include "helpers/MockOperator.h" // Corrected include path
 #include "headers/operators/Operator.h"
 #include <memory>
 #include "headers/util/DynamicArray.h"
@@ -13,7 +13,7 @@ class OperatorConstructionTest : public ::testing::Test {
 };
 
 TEST_F(OperatorConstructionTest, ConstructorAndGetId) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(123); // Changed to TestOperator
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(123); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
     EXPECT_EQ(op->getId(), 123);
 
@@ -22,7 +22,7 @@ TEST_F(OperatorConstructionTest, ConstructorAndGetId) {
     EXPECT_EQ(connections.maxIdx(), -1);
     EXPECT_EQ(connections.count(), 0);
 
-    std::unique_ptr<TestOperator> op2 = std::make_unique<TestOperator>(0); // Changed to TestOperator
+    std::unique_ptr<MockOperator> op2 = std::make_unique<MockOperator>(0); // Changed to TestOperator
     ASSERT_NE(op2, nullptr);
     EXPECT_EQ(op2->getId(), 0);
 }
@@ -37,7 +37,7 @@ TEST_F(OperatorConstructionTest, DeserializeNoConnections) {
 
     const std::byte* ptr = buffer.data();
     const std::byte* end_ptr = buffer.data() + buffer.size();
-    TestOperator op(ptr, end_ptr);
+    MockOperator op(ptr, end_ptr);
 
     EXPECT_EQ(op.getId(), id);
     const auto& connections = op.getOutputConnections();
@@ -61,7 +61,7 @@ TEST_F(OperatorConstructionTest, DeserializeOneBucketOneTarget) {
 
     const std::byte* ptr = buffer.data();
     const std::byte* end_ptr = buffer.data() + buffer.size();
-    TestOperator op(ptr, end_ptr);
+    MockOperator op(ptr, end_ptr);
 
     EXPECT_EQ(op.getId(), id);
     const auto& connections = op.getOutputConnections();
@@ -106,7 +106,7 @@ TEST_F(OperatorConstructionTest, DeserializeMultipleBucketsMultipleTargets) {
 
     const std::byte* ptr = buffer.data();
     const std::byte* end_ptr = buffer.data() + buffer.size();
-    TestOperator op(ptr, end_ptr);
+    MockOperator op(ptr, end_ptr);
 
     EXPECT_EQ(op.getId(), id);
     const auto& connections = op.getOutputConnections();

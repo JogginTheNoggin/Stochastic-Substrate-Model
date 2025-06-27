@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "helpers/TestOperator.h" // Changed to TestOperator
+#include "helpers/MockOperator.h" // Changed to TestOperator
 #include "headers/operators/Operator.h"
 #include <memory>
 #include "headers/util/DynamicArray.h"
@@ -9,7 +9,7 @@ class OperatorRemoveConnectionTest : public ::testing::Test {
 };
 
 TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalBasic) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(10); // Changed to TestOperator
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(10); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     // add two
@@ -28,7 +28,7 @@ TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalBasic) {
 }
 
 TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalLastFromBucket) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(11); // Changed to TestOperator
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(11); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(110, 3);
@@ -41,7 +41,7 @@ TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalLastFromBucket) {
 }
 
 TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalNonExistentTarget) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(12); // Changed to TestOperator
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(12); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(120, 1);
@@ -56,7 +56,7 @@ TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalNonExistentTarget) 
 }
 
 TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalNonExistentDistance) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(13); // Changed to TestOperator
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(13); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(130, 4);
@@ -71,7 +71,7 @@ TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalNonExistentDistance
 }
 
 TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalNegativeDistance) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(14); // Changed to TestOperator
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(14); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     op->addConnectionInternal(140, 2);
@@ -86,7 +86,7 @@ TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalNegativeDistance) {
 }
 
 TEST_F(OperatorRemoveConnectionTest, RemoveConnectionInternalFromEmptyConnections) {
-    std::unique_ptr<TestOperator> op = std::make_unique<TestOperator>(15); // Changed to TestOperator
+    std::unique_ptr<MockOperator> op = std::make_unique<MockOperator>(15); // Changed to TestOperator
     ASSERT_NE(op, nullptr);
 
     op->removeConnectionInternal(150, 0);

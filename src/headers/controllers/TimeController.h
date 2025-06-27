@@ -106,13 +106,14 @@ public:
  	 */
 	virtual ~TimeController();
 
+
 	/**
  	 * @brief Executes one full time step of the simulation.
  	 * @param None
  	 * @return Void.
  	 * @details Calls internal methods for each processing phase in order.
  	 */
-	void processCurrentStep();
+	virtual void processCurrentStep();
 
 	/**
  	 * @brief Prepares the controller for the next time step.
@@ -120,7 +121,7 @@ public:
  	 * @return Void.
  	 * @details Moves payloads from nextStepPayloads to currentStepPayloads, clears nextStepPayloads.
  	 */
-	void advanceStep();
+	virtual void advanceStep();
 
 	/**
  	 * @brief Adds a newly created payload to be processed starting next step.
@@ -128,7 +129,7 @@ public:
  	 * @return Void.
  	 * @note Called by Scheduler::schedulePayloadForNextStep.
  	 */
-	void addToNextStepPayloads(const Payload& payload);
+	virtual void addToNextStepPayloads(const Payload& payload);
 
 	/**
  	 * @brief Delivers message data immediately and flags operator for next step processing.
@@ -138,12 +139,12 @@ public:
  	 * @note Called by Scheduler::scheduleMessage. Uses MetaController to get pointer,
  	 * calls Operator::message(), and adds ID to operatorsToProcess.
  	 */
-	void deliverAndFlagOperator(int targetOperatorId, int messageData);
+	virtual void deliverAndFlagOperator(int targetOperatorId, int messageData);
 
 
 	// --- Getters (Optional) ---
-	long long getCurrentStep() const;
-	size_t getActivePayloadCount() const;
+	virtual long long getCurrentStep() const;
+	virtual size_t getActivePayloadCount() const;
 
 	// --- Public State Persistence Methods ---
 
@@ -162,7 +163,7 @@ public:
      * [operatorsToProcessCount x OperatorID Blocks (1-byte size + int data)]
      * - OperatorID Block: [uint8_t size = sizeof(int)][sizeof(int) bytes value BE]
      */
-    bool saveState(const std::string& filePath) const;
+    virtual bool saveState(const std::string& filePath) const;
 
     /**
      * @brief Loads the dynamic state (payloads, operator flags) from a file.
@@ -179,7 +180,7 @@ public:
      * [operatorsToProcessCount x OperatorID Blocks (1-byte size + int data)]
      * - OperatorID Block: [uint8_t size = sizeof(int)][sizeof(int) bytes value BE]
      */
-    bool loadState(const std::string& filePath);
+    virtual bool loadState(const std::string& filePath);
 
 
 	/**
@@ -188,7 +189,7 @@ public:
      * @param pretty If true, format with indentation and newlines. If false, compact output.
      * @return void
      */
-    void printCurrentPayloads(std::ostream& out /* = std::cout */, bool pretty = false) const;
+    virtual void printCurrentPayloads(std::ostream& out /* = std::cout */, bool pretty = false) const;
 
 	// Prevent copying/assignment
 	TimeController(const TimeController&) = delete;

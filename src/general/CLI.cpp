@@ -92,6 +92,28 @@ void CLI::processCommand(const std::string& line) {
             sim->saveConfiguration(path);
             std::cout << "Configuration saved to " << path << std::endl;
         }
+    } else if (command == "load-state") {
+        std::string path;
+        ss >> path;
+        if (path.empty()) {
+            std::cout << "Error: Please provide a file path." << std::endl;
+        } else {
+            try {
+                sim->loadState(path);
+                std::cout << "Network state loaded from " << path << std::endl;
+            } catch (const std::exception& e) {
+                std::cout << "Error loading state: " << e.what() << std::endl;
+            }
+        }
+    } else if (command == "save-state") {
+        std::string path;
+        ss >> path;
+        if (path.empty()) {
+            std::cout << "Error: Please provide a file path." << std::endl;
+        } else {
+            sim->saveState(path);
+            std::cout << "Network State saved to " << path << std::endl;
+        }
     } else if (command == "new-network") {
         int num_ops;
         if (!(ss >> num_ops)) {
@@ -153,6 +175,8 @@ void CLI::processCommand(const std::string& line) {
          std::cout << "Available Commands:\n"
               << "  load-config <path>      - Load network structure from a file.\n"
               << "  save-config <path>      - Save network structure to a file.\n"
+              << "  load-state <path>       - Load network state from a file.\n"
+              << "  save-state <path>       - Save network state to a file.\n"
               << "  new-network <count>     - Create a new random network.\n"
               << "  run [steps]             - Run simulation for N steps or until inactive.\n"
               << "  pause / stop            - Request the running simulation to stop.\n"

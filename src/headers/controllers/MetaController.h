@@ -21,7 +21,7 @@ struct IdRange;
  * non-overlapping ID ranges), and delegating runtime operator modifications to the appropriate Layer instance.
  */
 class MetaController {
-private:
+protected:
     Randomizer* rand; 
     // --- Core State ---
     
@@ -87,6 +87,8 @@ public:
     MetaController(int numOperators);
 
 
+    MetaController(int numOperators, Randomizer* randomizer);
+
     /**
      * @brief Constructor for the MetaController.
      * @details Initializes an empty MetaController. If a configuration file path is provided,
@@ -111,7 +113,7 @@ public:
      * Note: Modifications to the layer and its operators do not notify other intermediate class such as updateControllers etc. 
      * This may change in the future.
      */
-    void randomizeNetwork(int numOperators, Randomizer* randomizer);
+    virtual void randomizeNetwork(int numOperators, Randomizer* randomizer);
 
     // --- Public Operator Access ---
 
@@ -131,13 +133,13 @@ public:
      * @brief Gets the number of layers currently managed by the MetaController.
      * @return size_t The number of layers.
      */
-    size_t getLayerCount() const;
+    virtual size_t getLayerCount() const;
 
     /**
      * @brief Gets the total number of operators across all layers in the network.
      * @return size_t The total operator count.
      */
-    size_t getTotalOperatorCount() const;
+    virtual size_t getOpCount() const;
     
     /**
      * @brief Provides read-only access to the collection of layers.
@@ -156,11 +158,11 @@ public:
     /**
      * @return, true if the layer with operator exist and message has been sent, false otherwise
      */
-    bool messageOp(uint32_t operatorId, int message);
+    virtual bool messageOp(uint32_t operatorId, int message);
 
-    void processOpData(uint32_t operatorId);
+    virtual void processOpData(uint32_t operatorId);
 
-    void traversePayload(Payload* payload);
+    virtual void traversePayload(Payload* payload);
 
 
 
@@ -221,7 +223,7 @@ public:
      * @param filePath The path to the file where the configuration will be saved.
      * @return True if saving was successful, false otherwise.
      */
-    bool saveConfiguration(const std::string& filePath) const;
+    virtual bool saveConfiguration(const std::string& filePath) const;
 
     /**
      * @brief Loads a complete network configuration from a file, replacing any existing state.
@@ -232,7 +234,7 @@ public:
      * @param filePath The path to the file containing the configuration.
      * @return True if loading and validation were successful, false otherwise.
      */
-    bool loadConfiguration(const std::string& filePath);
+    virtual bool loadConfiguration(const std::string& filePath);
 
     // --- JSON Output ---
 
@@ -244,13 +246,22 @@ public:
      * @param prettyPrint If true, format the JSON for human readability.
      * @return A std::string containing the JSON representation of the network.
      */
-    std::string getOperatorsAsJson(bool prettyPrint = true) const;
+    virtual std::string getOperatorsAsJson(bool prettyPrint = true) const;
 
     /**
      * @brief Prints a JSON representation of the entire network to standard output.
      * @param prettyPrint If true, format the JSON for human readability.
      */
-    void printOperators(bool prettyPrint = true) const;
+    virtual void printOperators(bool prettyPrint = true) const;
+
+    // ----- Input & Output for network ----
+    virtual std::string getOutput() const;
+
+    virtual bool inputText(std::string input); 
+
+    virtual bool isEmpty() const;
+
+    // TODO add audio and image input options
 
     // Prevent copying to ensure clear ownership of layers and operators
     MetaController(const MetaController&) = delete;

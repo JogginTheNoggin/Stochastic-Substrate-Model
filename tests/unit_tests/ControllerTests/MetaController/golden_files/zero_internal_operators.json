@@ -1,0 +1,64 @@
+[
+  {
+    "layerType": "0",
+    "isRangeFinal": true,
+    "reservedRange": {
+      "minId": 0,
+      "maxId": 2
+    },
+    "operatorCount": 3,
+    "operators": [
+      {
+        "opType": "IN",
+        "operatorId": 0,
+        "outputDistanceBuckets": []
+      },
+      {
+        "opType": "IN",
+        "operatorId": 1,
+        "outputDistanceBuckets": []
+      },
+      {
+        "opType": "IN",
+        "operatorId": 2,
+        "outputDistanceBuckets": []
+      }
+    ]
+  },
+  {
+    "layerType": "1",
+    "isRangeFinal": true,
+    "reservedRange": {
+      "minId": 3,
+      "maxId": 5
+    },
+    "operatorCount": 3,
+    "operators": [
+      {
+        "opType": "OUT",
+        "operatorId": 3,
+        "outputDistanceBuckets": []
+      },
+      {
+        "opType": "OUT",
+        "operatorId": 4,
+        "outputDistanceBuckets": []
+      },
+      {
+        "opType": "OUT",
+        "operatorId": 5,
+        "outputDistanceBuckets": []
+      }
+    ]
+  },
+  {
+    "layerType": "2",
+    "isRangeFinal": false,
+    "reservedRange": {
+      "minId": 6,
+      "maxId": 6
+    },
+    "operatorCount": 0,
+    "operators": []
+  }
+]

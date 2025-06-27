@@ -28,7 +28,7 @@ void InternalLayer::randomInit(IdRange* connectionRange, Randomizer* randomizer)
     if (capacity <= 0) {
         return;
     }
-    int numOpsToCreate = (capacity > 1) ? randomizer->getInt(capacity / 2, capacity) : capacity; // half to full capacity
+    int numOpsToCreate = capacity; //(capacity > 1) ? randomizer->getInt(capacity / 2, capacity) : capacity; // half to full capacity
     
     std::vector<Operator*> justCreatedOperators; // Keep track of new ops to connect them
     justCreatedOperators.reserve(numOpsToCreate);
