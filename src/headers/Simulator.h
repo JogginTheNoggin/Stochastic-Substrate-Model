@@ -3,6 +3,7 @@
 #include "controllers/MetaController.h"
 #include "controllers/TimeController.h"
 #include "controllers/UpdateController.h"
+#include "../headers/util/Randomizer.h"
 #include "Scheduler.h"
 #include "UpdateScheduler.h"
 #include <string>
@@ -40,6 +41,8 @@ private:
     MetaController metaController;
     UpdateController updateController;
     TimeController timeController;
+
+    Randomizer* rand = nullptr;
 
     // Store pointers to manage scheduler lifetime if needed,
     // especially if ResetInstances isn't called globally at shutdown.
@@ -87,13 +90,13 @@ public:
      * and sets up the static Scheduler instances.
      * @param configPath Optional path to a configuration file for MetaController.
      */
-    Simulator(const std::string& configPath = "");
+    Simulator(const std::string& configPath = "", Randomizer* randomizer = nullptr);
 
     /**
      * @brief Constructor for creating a Simulator with a programmatically generated network.
      * @param numberOfOperators The number of internal operators to create in the random network.
      */
-    Simulator(int numberOfOperators);
+    Simulator(int numberOfOperators, Randomizer* randomizer = nullptr);
 
     /**
      * @brief Destructor for the Simulator class.

@@ -1,8 +1,8 @@
 #include "../headers/Simulator.h"
-#include "../headers/util/Randomizer.h"
 #include "../headers/util/Console.h"
 #include "../headers/layers/InputLayer.h"
 #include "../headers/layers/OutputLayer.h"
+#include "../headers/util/PseudoRandomSource.h"
 // #include "UpdateEvent.h" // Likely not needed here anymore
 #include <iostream>      // For basic logging/output
 #include <stdexcept>     // For exception handling during init
@@ -10,10 +10,13 @@
 
 
 
-Simulator::Simulator(int numberOfOperators): 
-    metaController(numberOfOperators), 
+Simulator::Simulator(int numberOfOperators, Randomizer* randomizer): 
+    rand(randomizer),
+    metaController(numberOfOperators, randomizer), 
     updateController(metaController), 
     timeController(metaController){
+
+
 
     init(); 
 }
@@ -26,8 +29,9 @@ Simulator::Simulator(int numberOfOperators):
  * network setup based on configPath. Calls static factories for Schedulers.
  * @param configPath Optional path passed to MetaController for loading initial config.
  */
-Simulator::Simulator(const std::string& configPath /*= ""*/) :
-    metaController(configPath),           // 1. metaController constructed (loads/sets up network)
+Simulator::Simulator(const std::string& configPath /*= ""*/, Randomizer* randomizer): 
+    rand(randomizer),
+    metaController(configPath, randomizer),           // 1. metaController constructed (loads/sets up network)
     updateController(metaController),   // 2. updateController constructed
     timeController(metaController)      // 3. timeController constructed
 {
@@ -54,6 +58,12 @@ Simulator::~Simulator()
 
 
 void Simulator::init() {
+    if (rand == nullptr) {
+        // default to pseudo random
+        rand = new Randomizer(std::make_unique<PseudoRandomSource>());
+    } 
+
+
     // Purpose: Initialize the static Scheduler instances.
     // Parameters: None.
     // Return: Void.
@@ -142,8 +152,8 @@ void Simulator::createNewNetwork(int numOperators) {
         return;
     }
     std::lock_guard<std::mutex> lock(simMutex);
-    Randomizer r;
-    metaController.randomizeNetwork(numOperators, &r);
+ 
+    metaController.randomizeNetwork(numOperators);
     if (metaController.isEmpty()) {
         hasNetwork = true;
     }

@@ -6,6 +6,7 @@
 #include "../headers/layers/OutputLayer.h"
 #include "../headers/layers/InternalLayer.h"
 #include "../headers/util/Randomizer.h"
+#include "../headers/util/PseudoRandomSource.h"
 #include <fstream>
 #include <vector>
 #include <algorithm> // For std::sort in validation
@@ -14,7 +15,7 @@
 // --- Constructor & State Management ---
 // custom randomizer, primarily for testing
 MetaController::MetaController(int numOperators, Randomizer* randomizer): rand(randomizer) {
-    randomizeNetwork(numOperators, rand); 
+    randomizeNetwork(numOperators); 
 
 
     // below is unnecessary based on how randomizeNetwork is but is done for safe keeping
@@ -34,7 +35,7 @@ MetaController::MetaController(int numOperators, Randomizer* randomizer): rand(r
 
 
 
-
+/*
 MetaController::MetaController(int numOperators){
     rand = new Randomizer();
     randomizeNetwork(numOperators, rand); 
@@ -53,13 +54,13 @@ MetaController::MetaController(int numOperators){
         throw; // Re-throw the validation error.
     }
 }; 
-
+*/
 
 /**
  * @brief Constructor for the MetaController.
  * @param configPath Optional path to a network configuration file to load on startup.
  */
-MetaController::MetaController(const std::string& configPath) {
+MetaController::MetaController(const std::string& configPath, Randomizer* randomizer): rand(randomizer){
     if (!configPath.empty()) {
         try {
             loadConfiguration(configPath);
@@ -74,9 +75,13 @@ MetaController::MetaController(const std::string& configPath) {
 
 MetaController::~MetaController() = default;
 
-void MetaController::randomizeNetwork(int numInternalOperators, Randomizer* randomizer) {
-    if (numInternalOperators < 0 || !randomizer) {
-        throw std::invalid_argument("Number of internal operators cannot be negative and randomizer cannot be null.");
+void MetaController::randomizeNetwork(int numInternalOperators) {
+    if (numInternalOperators < 0 ) {
+        throw std::invalid_argument("Number of internal operators cannot be negative.");
+    }
+    else if(!rand){
+        // default to pseudo random
+        rand = new Randomizer(std::make_unique<PseudoRandomSource>());
     }
 
 
@@ -118,11 +123,11 @@ void MetaController::randomizeNetwork(int numInternalOperators, Randomizer* rand
     // 5. Call randomInit() on  respective layers to create operators(only internal layer) and queue connection events (both input and internal layer).
     // Note: The `randomInit` method populates the layer with operators and then calls
     // changes are reflected immediately, as layers do not need to call updateController or notify other intermediate classes (may change in the future)
-    inputLayer->randomInit(fullConnectionRange, randomizer); // randomly connects input channels to a number of operators
+    inputLayer->randomInit(fullConnectionRange, rand); // randomly connects input channels to a number of operators
 
     // Only initialize the internal layer if operators were requested for it.
     if (numInternalOperators > 0) {
-        internalLayer->randomInit(fullConnectionRange, randomizer); // randomly connects internal operators to other internal operators and or output channels
+        internalLayer->randomInit(fullConnectionRange, rand); // randomly connects internal operators to other internal operators and or output channels
         // output layer is not randomized, as has predefined operators and no outbound connections
     }
 

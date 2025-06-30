@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 project(Athena)
 
 include(CTest)
+include(FetchContent)
 
 # Set source directories
 set(SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
@@ -16,6 +17,19 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # -----------------------------------
+# Libsodium (Secure Randomness)
+# -----------------------------------
+
+FetchContent_Declare(
+  Sodium
+  GIT_REPOSITORY https://github.com/robinlinden/libsodium-cmake.git
+  GIT_TAG e5b985ad0dd235d8c4307ea3a385b45e76c74c6a #lastest commit hash of wrapper
+)
+
+set(SODIUM_DISABLE_TESTS ON)
+FetchContent_MakeAvailable(Sodium)
+
+# -----------------------------------
 # Core Library (AthenaLib)
 # -----------------------------------
 file(GLOB_RECURSE CORE_SOURCES 
@@ -28,6 +42,7 @@ message(STATUS "Core source files found: ${CORE_SOURCES}")
 if(CORE_SOURCES)
     add_library(AthenaLib ${CORE_SOURCES})
     target_include_directories(AthenaLib PUBLIC "${SOURCE_DIR}/headers")
+    target_link_libraries(AthenaLib PUBLIC sodium)
 else()
     message(WARNING "No core source files found. Skipping AthenaLib creation.")
 endif()
@@ -54,7 +69,6 @@ endif()
 enable_testing()
 
 # Add GoogleTest
-include(FetchContent)
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git

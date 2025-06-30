@@ -84,8 +84,6 @@ protected:
 
 public:
 
-    MetaController(int numOperators);
-
 
     MetaController(int numOperators, Randomizer* randomizer);
 
@@ -95,7 +93,7 @@ public:
      * it immediately attempts to load the network configuration from that file.
      * @param configPath Optional path to a network configuration file to load on startup.
      */
-    MetaController(const std::string& configPath = "");
+    MetaController(const std::string& configPath = "", Randomizer* randomizer = nullptr);
     
     /**
      * @brief Destructor.
@@ -108,12 +106,11 @@ public:
      * @brief Generates a network with a specified number of operators of a given type
      * and randomizes their connections.
      * @param numOperators The total number of operators to create.
-     * @param randomizer The randomizer for generating a random configuration. 
      * @details Creates layers with respective ranges, then calls their randomizeInit method on the appropriate ones.
      * Note: Modifications to the layer and its operators do not notify other intermediate class such as updateControllers etc. 
      * This may change in the future.
      */
-    virtual void randomizeNetwork(int numOperators, Randomizer* randomizer);
+    virtual void randomizeNetwork(int numOperators);
 
     // --- Public Operator Access ---
 
