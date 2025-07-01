@@ -181,7 +181,7 @@ void Simulator::run(int numSteps)
     // Parameters: @param numSteps - The number of time steps to execute.
     // Return: Void.
     // Key Logic: Adds checks to prevent running without a network or running concurrently. Sets isRunning flag during execution.
-    if (hasNetwork) {
+    if (!hasNetwork) {
         ConsoleWriter() << "Error: No network loaded. Please use 'load-config' or 'new-network' first." << std::endl;
         return;
     }
