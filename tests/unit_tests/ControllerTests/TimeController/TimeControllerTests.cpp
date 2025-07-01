@@ -3,6 +3,7 @@
 #include "helpers/MockMetaController.h"
 #include "controllers/TimeController.h"
 #include "controllers/MetaController.h"
+#include "util/PseudoRandomSource.h"
 #include "Scheduler.h"
 #include "Payload.h"
 #include <memory>
@@ -15,13 +16,15 @@ protected:
     // Mocks to act as dependencies and observers
     std::unique_ptr<MockMetaController> mockMetaController;
     std::unique_ptr<MockTimeController> mockTimeController;
+    Randomizer* rand; 
 
     // The path for persistence tests
     std::string tempStateFile = "time_controller_state.bin";
 
     void SetUp() override {
+        rand = new Randomizer(std::unique_ptr<PseudoRandomSource>());
         // Instantiate dependencies for each test
-        mockMetaController = std::make_unique<MockMetaController>();
+        mockMetaController = std::make_unique<MockMetaController>(rand);
         
         // The TimeController requires a MetaController. We pass our mock.
         // We use the MockTimeController to gain access to the base class methods.
@@ -140,7 +143,7 @@ TEST_F(TimeControllerTest, SaveAndLoadStateRoundTrip) {
     ASSERT_TRUE(saveResult);
 
     // ARRANGE 2: Create a new TimeController to load the state into.
-    auto newMetaController = std::make_unique<MockMetaController>();
+    auto newMetaController = std::make_unique<MockMetaController>(rand);
     auto newTimeController = std::make_unique<MockTimeController>(*newMetaController);
     
     // ACT 2: Load the state from the file.

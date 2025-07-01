@@ -89,8 +89,13 @@ void CLI::processCommand(const std::string& line) {
         if (path.empty()) {
             std::cout << "Error: Please provide a file path." << std::endl;
         } else {
-            sim->saveConfiguration(path);
-            std::cout << "Configuration saved to " << path << std::endl;
+            bool result = sim->saveConfiguration(path);
+            if(result){
+                std::cout << "Configuration saved to " << path << std::endl;
+            }
+            else{
+                std::cout << "Failed to save file to " << path << std::endl;
+            }
         }
     } else if (command == "load-state") {
         std::string path;

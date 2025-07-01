@@ -82,13 +82,14 @@ public:
         lastPath = filePath;
     }
 
-    void saveConfiguration(const std::string& filePath) const override {
+    bool saveConfiguration(const std::string& filePath) const override {
         std::lock_guard<std::mutex> lock(mockMutex);
         // We need to cast away constness to modify mock state in a const method.
         auto* nonConstThis = const_cast<MockSimulator*>(this);
         nonConstThis->callCount++;
         nonConstThis->lastCall = LastCall::SAVE_CONFIG;
         nonConstThis->lastPath = filePath;
+        return true;
     }
 
     void loadState(const std::string& filePath) override {

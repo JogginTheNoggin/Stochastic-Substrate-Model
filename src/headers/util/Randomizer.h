@@ -5,12 +5,14 @@
 #include <memory>  // For std::unique_ptr if managing engine dynamically
 
 class Randomizer {
-private:
-    std::unique_ptr<RandomSource> source;
-
+protected: 
     // inaccessible
     Randomizer(){};
 
+private:
+    std::unique_ptr<RandomSource> source;
+
+    
 public:
 
     // Constructor now takes a RandomSource strategy

@@ -16,7 +16,7 @@ public:
 
     PseudoRandomSource() {
         std::random_device rd;
-        pseudoRandomEngine.seed(rd());
+        pseudoRandomEngine.seed(std::mt19937::default_seed);
     }
 
     

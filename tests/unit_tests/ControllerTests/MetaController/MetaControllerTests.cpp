@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "controllers/MetaController.h"
-#inlcude "util/PsuedoRandomSource.h"
+#include "util/PseudoRandomSource.h"
 #include "helpers/MockMetaController.h"
 #include "helpers/MockRandomSource.h"
 #include "helpers/MockRandomizer.h"
@@ -33,7 +33,7 @@ namespace {
 // Test Fixture for MetaController tests
 class MetaControllerTest : public ::testing::Test {
 protected:
-    std::unique_ptr<RandomSource> psuedoSource;
+    std::unique_ptr<RandomSource> pseudoSource;
     std::unique_ptr<RandomSource> mockSource; 
     Randomizer* rand; 
     MockRandomizer* mockRand;
@@ -55,10 +55,9 @@ protected:
     }
 
     void SetUp() override {
-        psuedoSource = std::unique_ptr<PsuedoRandomSource>();
-        mockSource = std::unique_ptr<MockRandomSource>()
-        rand = new Randomizer(std::unique_ptr<MockRandomSource>());
-        mockRand = new MockRandomizer(rand);
+        //mockSource = std::unique_ptr<MockRandomSource>();
+        rand = new Randomizer(std::make_unique<PseudoRandomSource>());
+        mockRand = new MockRandomizer();
     
         tempOutputFilePath = TEST_TEMP_DIR_PATH + "temp_mc_config.bin";
         
@@ -140,7 +139,7 @@ TEST_F(MetaControllerTest, ConstructorWithNumOperators_ZeroInternalOperators) {
     // We expect 3 layers: Input (3 ops), Output (3 ops), Internal (0 ops based on numInternalOperators=0)
     // Total ops = 3 (Input) + 3 (Output) = 6
     // The internal layer should still exist but have an empty ID range or handle 0 ops gracefully.
-    MetaController mc(0); 
+    MetaController mc(0, rand); 
     
     EXPECT_EQ(mc.getLayerCount(), 3) << "Should create Input, Output, and Internal layers.";
     
@@ -209,7 +208,7 @@ TEST_F(MetaControllerTest, ConstructorWithNumOperators_ZeroInternalOperators) {
 
 TEST_F(MetaControllerTest, ConstructorWithNumOperators_PositiveInternalOperators) {
     int numInternalOps = 5;
-    MetaController mc(numInternalOps); // Uses its own Randomizer
+    MetaController mc(numInternalOps, rand); // Uses its own Randomizer
 
     EXPECT_EQ(mc.getLayerCount(), 3);
     // Expected ops: 3 (Input) + 3 (Output) + numInternalOps
@@ -374,8 +373,8 @@ TEST_F(MetaControllerTest, ConstructorWithConfigPath_CorruptFile_InvalidLayerTyp
 // --- Test randomizeNetwork ---
 
 TEST_F(MetaControllerTest, RandomizeNetwork_ZeroInternalOperators) {
-    MetaController mc(""); // Start with an empty controller
-    mc.randomizeNetwork(0, rand);
+    MetaController mc("", rand); // Start with an empty controller
+    mc.randomizeNetwork(0);
 
     EXPECT_EQ(mc.getLayerCount(), 3);
     EXPECT_EQ(mc.getOpCount(), 6); // 3 Input, 3 Output, 0 Internal
@@ -397,9 +396,9 @@ TEST_F(MetaControllerTest, RandomizeNetwork_ZeroInternalOperators) {
 }
 
 TEST_F(MetaControllerTest, RandomizeNetwork_PositiveInternalOperators) {
-    MetaController mc(""); // Start empty
+    MetaController mc("", rand); // Start empty
     int numInternalOps = 5;
-    mc.randomizeNetwork(numInternalOps, rand);
+    mc.randomizeNetwork(numInternalOps);
 
     EXPECT_EQ(mc.getLayerCount(), 3);
     EXPECT_EQ(mc.getOpCount(), 3 + 3 + numInternalOps);
@@ -428,7 +427,7 @@ TEST_F(MetaControllerTest, RandomizeNetwork_ClearsPreviousState) {
 
     // Randomize again with a different number of operators
     int newNumInternalOps = 1;
-    mc.randomizeNetwork(newNumInternalOps, rand);
+    mc.randomizeNetwork(newNumInternalOps);
 
     EXPECT_EQ(mc.getLayerCount(), 3);
     EXPECT_EQ(mc.getOpCount(), 3 + 3 + newNumInternalOps); // Should reflect the new count
@@ -449,7 +448,7 @@ TEST_F(MetaControllerTest, RandomizeNetwork_ClearsPreviousState) {
 }
 
 TEST_F(MetaControllerTest, RandomizeNetwork_InvalidParameters_NegativeOperators) {
-    MetaController mc("");
+    MetaController mc("", rand);
     EXPECT_THROW(mc.randomizeNetwork(-1), std::invalid_argument);
 }
 

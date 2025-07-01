@@ -32,7 +32,7 @@ public:
     /**
      * @brief Default constructor.
      */
-    MockRandomizer(Randomizer* randomizer){}
+    MockRandomizer(){}
 
     /**
      * @brief Adds an integer value to the back of the queue of values to be returned by getInt().

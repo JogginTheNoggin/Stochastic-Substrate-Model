@@ -79,7 +79,7 @@ void MetaController::randomizeNetwork(int numInternalOperators) {
     if (numInternalOperators < 0 ) {
         throw std::invalid_argument("Number of internal operators cannot be negative.");
     }
-    else if(!rand){
+    else if(rand == nullptr){
         // default to pseudo random
         rand = new Randomizer(std::make_unique<PseudoRandomSource>());
     }
@@ -502,6 +502,7 @@ bool MetaController::saveConfiguration(const std::string& filePath) const {
 
     std::ofstream outFile(filePath, std::ios::binary | std::ios::trunc);
     if (!outFile.is_open()) {
+        std::cout << "Could not open path specified in metaController" << std::endl; 
         // Optional: Log an error here.
         return false;
     }
@@ -515,6 +516,7 @@ bool MetaController::saveConfiguration(const std::string& filePath) const {
                 if (!outFile.good()) {
                     // File write error occurred.
                     outFile.close();
+                    std::cout << "Error writting to path specified in metaController" << std::endl; 
                     return false;
                 }
             }

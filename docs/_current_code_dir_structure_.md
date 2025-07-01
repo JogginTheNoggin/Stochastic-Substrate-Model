@@ -49,10 +49,12 @@
     - Console.h
     - DynamicArray.h
     - IdRange.h
+    - LibsodiumRandomSource.h
+    - PseudoRandomSource.h
+    - RandomSource.h
     - Randomizer.h
     - Serializer.h
 - main.cpp
-- unit_tests/
 
 ## `tests/`
 - Testing/
@@ -72,8 +74,10 @@
   - LayerTests/
     - InputLayer/
       - InputLayerTests.cpp
+      - golden_files/
     - InternalLayer/
       - InternalLayerTests.cpp
+      - golden_files/
     - Layer/
       - LayerTests.cpp
       - golden_files/
@@ -82,6 +86,7 @@
         - layer_with_operators_compact.json
     - OutputLayer/
       - OutputLayerTests.cpp
+      - golden_files/
   - OperatorTests/
     - AddOperator/
       - AddOperatorTests.cpp
@@ -140,6 +145,7 @@
     - MockLayer.h
     - MockMetaController.h
     - MockOperator.h
+    - MockRandomSource.h
     - MockRandomizer.h
     - MockSimulator.h
     - MockTimeController.h

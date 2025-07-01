@@ -1,6 +1,7 @@
 
 #include "../headers/operators/OutOperator.h"
 #include <cmath>
+#include <iostream>
 
 // TODO better comments
 
@@ -51,7 +52,7 @@ void OutOperator::changeParams(const std::vector<int>& params) {
 }
 
 void OutOperator::message(const int payloadData){
-
+    std::cout << " Output recieved. " << std::endl; // TODO temporary for testing
     data.push_back(payloadData); 
 }
 

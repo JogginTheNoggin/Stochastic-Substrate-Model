@@ -67,6 +67,7 @@ private:
      */
     void init();
 
+
     /**
      * @brief Gets a snapshot of the current status of the simulation.
      * @return A SimulationStatus struct containing key metrics.
@@ -98,6 +99,8 @@ public:
      */
     Simulator(int numberOfOperators, Randomizer* randomizer = nullptr);
 
+
+
     /**
      * @brief Destructor for the Simulator class.
      * @details Ensures cleanup of Scheduler instances if managed here.
@@ -123,7 +126,7 @@ public:
      * @param filePath The path where the configuration file will be saved. 
      * @details This method is thread-safe and can be called while the simulation is paused.
      */
-    virtual void saveConfiguration(const std::string& filePath) const;
+    virtual bool saveConfiguration(const std::string& filePath) const;
 
 
     /**

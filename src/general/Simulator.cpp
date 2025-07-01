@@ -100,23 +100,24 @@ void Simulator::loadConfiguration(const std::string& filePath) {
     }
     std::lock_guard<std::mutex> lock(simMutex);
     metaController.loadConfiguration(filePath);
-    if (metaController.isEmpty()) {
+    if (!metaController.isEmpty()) {
         hasNetwork = true;
     }
 }
 
 // TODO may also need to save update state in future
 // TODO needs to also save the timeController information, which holds payloads etc
-void Simulator::saveConfiguration(const std::string& filePath) const {
+bool Simulator::saveConfiguration(const std::string& filePath) const {
     // Purpose: To save the current network configuration to a file.
     // Parameters: @param filePath - The path where the file will be saved.
     // Return: Void.
     // Key Logic: Acquires a lock for thread-safe access to the MetaController, then delegates the call.
     if(!hasNetwork){
-        return; // only attempt save if network present
+        std::cout << "No network found to save" << std::endl; 
+        return false; // only attempt save if network present
     }
     std::lock_guard<std::mutex> lock(simMutex);
-    metaController.saveConfiguration(filePath);
+    return metaController.saveConfiguration(filePath);
     
 }
 
@@ -154,8 +155,11 @@ void Simulator::createNewNetwork(int numOperators) {
     std::lock_guard<std::mutex> lock(simMutex);
  
     metaController.randomizeNetwork(numOperators);
-    if (metaController.isEmpty()) {
+    if (!metaController.isEmpty()) {
         hasNetwork = true;
+    }
+    else{
+        hasNetwork = false; 
     }
 }
 
@@ -315,6 +319,7 @@ bool Simulator::isFinished(){
 
     return false;
 }
+
 
 // 
 void Simulator::submitText(const std::string& text) {

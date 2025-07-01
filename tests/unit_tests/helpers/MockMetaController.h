@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 #include "controllers/MetaController.h"
+#include "util/Randomizer.h"
 #include "operators/Operator.h"
 #include <string>
 #include <vector>
@@ -78,7 +79,7 @@ public:
      * @details Calls the base MetaController constructor with an empty string,
      * ensuring the base class is properly initialized in a default state.
      */
-    MockMetaController() : MetaController("") {}
+    MockMetaController(Randomizer* randomizer) : MetaController("", randomizer) {}
     virtual ~MockMetaController() override = default;
 
     /**
@@ -122,7 +123,7 @@ public:
         return true;
     }
 
-    void randomizeNetwork(int numOperators, Randomizer* randomizer) override {
+    void randomizeNetwork(int numOperators) override {
         callCount++;
         lastCall = LastCall::RANDOMIZE_NETWORK;
     }
@@ -264,8 +265,8 @@ public:
     }
 
 
-    void baseRandomizeNetwork(int numOperators, Randomizer* randomizer){
-        MetaController::randomizeNetwork(numOperators, randomizer);
+    void baseRandomizeNetwork(int numOperators){
+        MetaController::randomizeNetwork(numOperators);
     }
 
     // Public
