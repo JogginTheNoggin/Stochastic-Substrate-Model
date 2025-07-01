@@ -36,8 +36,12 @@ class Serializer;
  */
 class AddOperator : public Operator {
 private:
-    static constexpr int MAX_CONNECTIONS = 5;
-    static constexpr int MAX_DISTANCE = 10; 
+    static constexpr int MAX_CONNECTIONS = 3;
+    static constexpr int MAX_DISTANCE = 3; 
+    static constexpr int MIN_THRESHOLD = 0;
+    static constexpr int MAX_THRESHOLD = 1;
+    static constexpr int MIN_WEIGHT = -2056;
+    static constexpr int MAX_WEIGHT = 2056; 
     int weight;
     int threshold;
     int accumulateData; // Specific to AddOperator for integer accumulation

@@ -19,7 +19,7 @@
 struct Payload {
 	// --- State Data ---
 	int message = 0;        	// The data value being transmitted.
-	uint32_t currentOperatorId = -1; // ID of the Operator managing this payload's current journey.
+	uint32_t currentOperatorId = 0; // ID of the Operator managing this payload's current journey.
 	uint16_t distanceTraveled = 0;   	//DEFAULT current distance payload traveled in current Operator, used to index for operator connections
 	bool active = true;     	// Is the payload still traversing? (Set false when journey ends).
 

@@ -132,6 +132,7 @@ public:
             elementCount--;
         }
         elements[idx] = nullptr;
+        //TODO maxIdx update
     }
 
     /**
@@ -144,7 +145,7 @@ public:
 
 private:
     T*          elements[MAX_SIZE]{};        // raw storage (default-initialised)
-    size_type  maxElementIdx = static_cast<int16_t>(-1);               // highest slot ever written
+    size_type  maxElementIdx = static_cast<int16_t>(0);               // highest slot ever written
     size_type   elementCount = 0;                     // Count of non-null elements
     // TODO in dynamicArray the inconsistent use of int16_t and uint16_t maybe a problem 
 

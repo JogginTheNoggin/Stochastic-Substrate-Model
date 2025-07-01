@@ -3,6 +3,7 @@
 #include "../headers/util/Randomizer.h"
 #include "../headers/util/IdRange.h"
 #include "../headers/UpdateEvent.h"
+#include "../headers/Scheduler.h"
 
 
 
@@ -141,6 +142,8 @@ void InputLayer::inputText(std::string text){
     // left for readability
     uint32_t textChannelId = reservedRange->getMinId() + textChannelIdOffset; 
     for (char c : text) {
-        operators.at(textChannelId)->message(static_cast<int>(c)); // no need to cast
+        // schedule each, which will then flag the operator for processing
+        Scheduler::get()->scheduleMessage(textChannelId, static_cast<int>(c));
+        //NOT correct:  operators.at(textChannelId)->message(static_cast<int>(c)); // no need to cast
     }
 }

@@ -102,10 +102,13 @@ void AddOperator::randomInit(uint32_t maxOperatorId, Randomizer* rng) {
     }
 }
 
+
+// TODO change random Connection limits, if there is a limited number of operators should it be able to make multiple connections to the same operator at different distances
+// TODO is it possible for duplicates to occur? 
 void AddOperator::randomInit(IdRange* idRange, Randomizer* rng){
     // randomize the weights and threshold
-    this->threshold = rng->getInt(0, std::numeric_limits<int>::max()); 
-    this->weight = rng->getInt(std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
+    this->threshold = rng->getInt(AddOperator::MIN_THRESHOLD, AddOperator::MAX_THRESHOLD); 
+    this->weight = rng->getInt(AddOperator::MIN_WEIGHT, AddOperator::MAX_WEIGHT);
 
     if (AddOperator::MAX_CONNECTIONS <= 0) {
         return; // Not enough potential targets or no connections allowed

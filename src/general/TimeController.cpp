@@ -113,8 +113,16 @@ void TimeController::processCurrentStep()
  */
 void TimeController::advanceStep()
 {
-    // Move payloads scheduled for the next step into the current step list
-    currentStepPayloads = std::move(nextStepPayloads); // TODO AI said "Efficient move" you sure
+    // Append the newly scheduled payloads (from nextStepPayloads) to the end of the list
+    // of payloads that are still traveling from the current step.
+    // merge
+    if (!nextStepPayloads.empty()) {
+        currentStepPayloads.insert(
+            currentStepPayloads.end(),
+            std::make_move_iterator(nextStepPayloads.begin()),
+            std::make_move_iterator(nextStepPayloads.end())
+        );
+    }
     // Clear the list that held the next step's payloads
     nextStepPayloads.clear();
     // Ensure vector capacity is managed if needed (clear might not shrink capacity)
@@ -223,6 +231,9 @@ void TimeController::processPayloadTraversal()
         metaControllerInstance.traversePayload(&payload);
     }
 
+    if(currentStepPayloads.empty()){
+        std::cout << "(Before change) Current is empty: Step  " + currentStep << std::endl; 
+    }
     // Cleanup: Remove payloads marked as inactive during this step's traversal
     // Using erase-remove idiom
     currentStepPayloads.erase(
@@ -230,6 +241,11 @@ void TimeController::processPayloadTraversal()
                        [](const Payload& p){ return !p.active; }),
         currentStepPayloads.end()
     );
+
+    if(currentStepPayloads.empty()){
+        std::cout << "(After change) Current is empty: Step  " + currentStep << std::endl; 
+    }
+    // will still contain payloads for the next timeStep, if the payload not set to false
 }
 
 // --- Load State Persistence Helper Implementations ---

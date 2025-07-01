@@ -52,7 +52,7 @@ void OutOperator::changeParams(const std::vector<int>& params) {
 }
 
 void OutOperator::message(const int payloadData){
-    std::cout << " Output recieved. " << std::endl; // TODO temporary for testing
+    // std::cout << " Output recieved. " << std::endl; // TODO temporary for testing
     data.push_back(payloadData); 
 }
 
@@ -155,6 +155,7 @@ std::string OutOperator::getDataAsString() {
     for (int value : data) {
         // Defensively handle negative values, though message() should prevent them.
         int non_negative_value = (value < 0) ? 0 : value;
+        std::cout << "Non negative: " + non_negative_value << std::endl; 
 
         char ch;
         // Use if constexpr to resolve the shift logic at compile time.
@@ -166,6 +167,7 @@ std::string OutOperator::getDataAsString() {
             // This case handles systems where int is 8 bits or less. Simply truncate.
             ch = static_cast<char>(non_negative_value & 0xFF); // truncate bottom 8 bits
         }
+        std::cout << "char: " + ch << std::endl; 
         out.push_back(ch);
     }
 

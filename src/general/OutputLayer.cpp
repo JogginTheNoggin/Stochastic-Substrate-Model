@@ -75,6 +75,7 @@ std::string OutputLayer::getTextOutput(){
         // left for readability
         uint32_t textChannelId = reservedRange->getMinId() + textChannelIdOffset; 
         // TODO should we not do dynamic cast and just save as subclass type, given only a few operators? or to remain sync follow the common interface?
+        
         return (static_cast<OutOperator*>(operators.at(textChannelId)))->getDataAsString(); // index 0 text channel
 }
 
