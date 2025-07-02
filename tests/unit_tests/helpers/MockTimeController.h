@@ -96,7 +96,7 @@ public:
         return stepToReturn;
     }
 
-    size_t getActivePayloadCount() const override {
+    size_t getCurrentStepPayloadCount() const override {
         return activePayloadsToReturn;
     }
 
@@ -115,10 +115,7 @@ public:
         lastFilePath = filePath;
         return true; // Simulate success
     }
-    
-    void printCurrentPayloads(std::ostream& out, bool pretty = false) const override { 
-        // No-op for the mock, as we don't want tests to produce console output.
-    }
+ 
 
     // --- Base Class Method Calls ---
     // These methods allow tests to call the REAL TimeController implementation,
@@ -175,8 +172,8 @@ public:
         return TimeController::getCurrentStep();
     }
 
-    size_t baseGetActivePayloadCount() const {
-        return TimeController::getActivePayloadCount();
+    size_t baseGetCurrentStepPayloadCount() const {
+        return TimeController::getCurrentStepPayloadCount();
     }
 
     bool baseSaveState(const std::string& filePath) const {
@@ -187,7 +184,8 @@ public:
         return TimeController::loadState(filePath);
     }
     
+    /* changed
     void basePrintCurrentPayloads(std::ostream& out, bool pretty = false) const { 
         TimeController::printCurrentPayloads(out, pretty);
-    }
+    } */
 };

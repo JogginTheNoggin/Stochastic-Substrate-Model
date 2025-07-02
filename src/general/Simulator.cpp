@@ -308,7 +308,7 @@ bool Simulator::isFinished(){
     if(!isRunning){ // cannot finish if not started
         return true;
     }
-    else if (timeController.getActivePayloadCount() == 0 && updateController.IsQueueEmpty()) {
+    else if (!timeController.hasPayloads() && updateController.IsQueueEmpty()) {
         ConsoleWriter() << "Simulation ended due to inactivity." << std::endl;
         return true;
     }
@@ -350,7 +350,8 @@ SimulationStatus Simulator::getStatus() const {
     std::lock_guard<std::mutex> lock(simMutex);
     return {
         timeController.getCurrentStep(),
-        timeController.getActivePayloadCount(),
+        timeController.getCurrentStepPayloadCount(),
+        timeController.getNextStepPayloadCount(),
         updateController.QueueSize(),
         metaController.getOpCount(),
         metaController.getLayerCount()
@@ -364,7 +365,8 @@ SimulationStatus Simulator::getStatusNoLock() const {
     // Return: @return A SimulationStatus struct with current metrics.
     return {
         timeController.getCurrentStep(),
-        timeController.getActivePayloadCount(),
+        timeController.getCurrentStepPayloadCount(),
+        timeController.getNextStepPayloadCount(),
         updateController.QueueSize(),
         metaController.getOpCount(),
         metaController.getLayerCount()
@@ -378,4 +380,14 @@ std::string Simulator::getNetworkJson(bool prettyPrint) const {
     // Key Logic: Acquires a lock and delegates the call to the MetaController. 
     std::lock_guard<std::mutex> lock(simMutex);
     return metaController.getOperatorsAsJson(prettyPrint);
+}
+
+std::string Simulator::getCurrentPayloadsJson(bool prettyPrint) const {
+    std::lock_guard<std::mutex> lock(simMutex);
+    return timeController.getCurrentPayloadsJson(prettyPrint);
+}
+
+std::string Simulator::getNextPayloadsJson(bool prettyPrint) const {
+    std::lock_guard<std::mutex> lock(simMutex);
+    return timeController.getNextPayloadsJson(prettyPrint); 
 }

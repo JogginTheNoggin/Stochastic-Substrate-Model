@@ -6,6 +6,7 @@
 #include "../headers/operators/OutOperator.h"
 #include "../headers/UpdateEvent.h"
 #include <stdexcept>               // For std::runtime_error
+#include <iostream>
 
 
 OutputLayer::OutputLayer(bool isIdRangeFinal, IdRange* initialReservedRange): Layer(LayerType::OUTPUT_LAYER, initialReservedRange, isIdRangeFinal){
@@ -76,6 +77,11 @@ std::string OutputLayer::getTextOutput(){
         uint32_t textChannelId = reservedRange->getMinId() + textChannelIdOffset; 
         // TODO should we not do dynamic cast and just save as subclass type, given only a few operators? or to remain sync follow the common interface?
         
+        /* for debugging
+        if(hasTextOutput()){
+            std::cout << "Has text output" << std::endl; 
+        }*/
+
         return (static_cast<OutOperator*>(operators.at(textChannelId)))->getDataAsString(); // index 0 text channel
 }
 

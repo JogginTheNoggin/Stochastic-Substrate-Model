@@ -145,7 +145,8 @@ public:
 
 	// --- Getters (Optional) ---
 	virtual long long getCurrentStep() const;
-	virtual size_t getActivePayloadCount() const;
+	virtual size_t getCurrentStepPayloadCount() const;
+    virtual size_t getNextStepPayloadCount() const;
 
 	// --- Public State Persistence Methods ---
 
@@ -184,13 +185,24 @@ public:
     virtual bool loadState(const std::string& filePath);
 
 
+    virtual bool hasPayloads() const;
+
 	/**
      * @brief Prints the current list of payloads (currentStepPayloads) in JSON array format.
      * @param out The output stream (defaults to std::cout if implemented in cpp).
      * @param pretty If true, format with indentation and newlines. If false, compact output.
      * @return void
      */
-    virtual void printCurrentPayloads(std::ostream& out /* = std::cout */, bool pretty = false) const;
+    virtual std::string getCurrentPayloadsJson(bool pretty = false) const;
+
+
+    /**
+     * @brief Prints the next step list of payloads (nextStepPayloads) in JSON array format.
+     * @param out The output stream (defaults to std::cout if implemented in cpp).
+     * @param pretty If true, format with indentation and newlines. If false, compact output.
+     * @return void
+     */
+    virtual std::string getNextPayloadsJson(bool pretty = false) const;
 
 	// Prevent copying/assignment
 	TimeController(const TimeController&) = delete;

@@ -52,7 +52,7 @@ protected:
 TEST_F(TimeControllerTest, ConstructorInitializesStateCorrectly) {
     // This test verifies the state after the constructor is called in SetUp.
     EXPECT_EQ(mockTimeController->baseGetCurrentStep(), 0);
-    EXPECT_EQ(mockTimeController->baseGetActivePayloadCount(), 0);
+    EXPECT_EQ(mockTimeController->baseGetCurrentStepPayloadCount(), 0);
     // The internal payload vectors and operator set should be empty by default.
 }
 
@@ -65,21 +65,21 @@ TEST_F(TimeControllerTest, AdvanceStepMovesPayloadsAndIncrementsStep) {
 
     // Check initial state
     ASSERT_EQ(mockTimeController->baseGetCurrentStep(), 0);
-    ASSERT_EQ(mockTimeController->baseGetActivePayloadCount(), 0);
+    ASSERT_EQ(mockTimeController->baseGetCurrentStepPayloadCount(), 0);
     
     // ACT: Advance the simulation by one step.
     mockTimeController->baseAdvanceStep();
 
     // ASSERT: The step counter should increment, and the payload should now be "current".
     EXPECT_EQ(mockTimeController->baseGetCurrentStep(), 1);
-    EXPECT_EQ(mockTimeController->baseGetActivePayloadCount(), 1);
+    EXPECT_EQ(mockTimeController->baseGetCurrentStepPayloadCount(), 1);
 
     // ACT: Advance again with no new payloads scheduled.
     mockTimeController->baseAdvanceStep();
     
     // ASSERT: The current payloads from the previous step should be cleared.
     EXPECT_EQ(mockTimeController->baseGetCurrentStep(), 2);
-    EXPECT_EQ(mockTimeController->baseGetActivePayloadCount(), 0);
+    EXPECT_EQ(mockTimeController->baseGetCurrentStepPayloadCount(), 0);
 }
 
 TEST_F(TimeControllerTest, DeliverAndFlagOperatorFlagsOperatorForNextStep) {
@@ -111,7 +111,7 @@ TEST_F(TimeControllerTest, ProcessCurrentStepCallsTraverseOnPayloads) {
     Payload p1(100, 1);
     mockTimeController->baseAddToNextStepPayloads(p1);
     mockTimeController->baseAdvanceStep(); // Move payload to current
-    ASSERT_EQ(mockTimeController->baseGetActivePayloadCount(), 1);
+    ASSERT_EQ(mockTimeController->baseGetCurrentStepPayloadCount(), 1);
 
     // ACT: Process the current step.
     mockTimeController->baseProcessCurrentStep();
@@ -136,7 +136,7 @@ TEST_F(TimeControllerTest, SaveAndLoadStateRoundTrip) {
 
     // Verify initial state before saving
     ASSERT_EQ(mockTimeController->baseGetCurrentStep(), 1);
-    ASSERT_EQ(mockTimeController->baseGetActivePayloadCount(), 1);
+    ASSERT_EQ(mockTimeController->baseGetCurrentStepPayloadCount(), 1);
 
     // ACT 1: Save the state to a file.
     bool saveResult = mockTimeController->baseSaveState(tempStateFile);
@@ -155,9 +155,9 @@ TEST_F(TimeControllerTest, SaveAndLoadStateRoundTrip) {
     EXPECT_EQ(newTimeController->baseGetCurrentStep(), 0);
     // It should have loaded 1 "current" payload and 1 "next" payload.
     // Let's check the active payload count after one advance step.
-    EXPECT_EQ(newTimeController->baseGetActivePayloadCount(), 1);
+    EXPECT_EQ(newTimeController->baseGetCurrentStepPayloadCount(), 1);
     newTimeController->baseAdvanceStep();
-    EXPECT_EQ(newTimeController->baseGetActivePayloadCount(), 1);
+    EXPECT_EQ(newTimeController->baseGetCurrentStepPayloadCount(), 1);
 
     // ASSERT 2: Check that the flagged operator was loaded correctly by processing a step.
     newTimeController->baseProcessCurrentStep();

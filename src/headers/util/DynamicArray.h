@@ -44,7 +44,7 @@
 template <typename T>
 class DynamicArray { // TODO check DynamicArray Memory leaks
 public:
-    static constexpr std::int16_t MAX_SIZE = 1000;
+    static constexpr std::int16_t MAX_SIZE = 10000;
 
     using value_type = T;
     using size_type  = std::int16_t;        // matches MAX_SIZE’s range

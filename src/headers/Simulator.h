@@ -21,14 +21,16 @@
  */
 struct SimulationStatus {
     long long currentStep;
-    size_t activePayloads;
+    size_t currentPayloads;
+    size_t nextPayloads;
     size_t pendingUpdates;
     size_t totalOperators;
     size_t layerCount;
 
     void print(){
         std::cout << "--- Step " << currentStep << " ---" << std::endl;
-        std::cout << "Active Payloads: " << activePayloads<< std::endl;
+        std::cout << "Current Payloads: " << currentPayloads << std::endl;
+        std::cout << "Next Step Payloads: " << nextPayloads << std::endl; // redundant as will only be greater than 0 when between steps 
         std::cout << "Pending Updates: " << pendingUpdates << std::endl;
         std::cout << "Operator Count: " << totalOperators << std::endl; // Added operator count log
         std::cout << "Layer Count: " << layerCount << std::endl; 
@@ -216,6 +218,10 @@ public:
     virtual std::string getNetworkJson(bool prettyPrint = true) const;
 
 
+    virtual std::string getCurrentPayloadsJson(bool prettyPrint = true) const;
+
+
+    virtual std::string getNextPayloadsJson(bool prettyPrint = true) const;
     
 
 };

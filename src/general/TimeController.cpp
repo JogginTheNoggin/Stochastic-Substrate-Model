@@ -93,11 +93,15 @@ TimeController::~TimeController()
  */
 void TimeController::processCurrentStep()
 {
-    // Phase 1: Check Operators flagged in the previous step and call processData
-    processOperatorChecks();
+    // order important, opposite would traverse but not allow new payloads to be made 
+    // if occurred at end
+    // meaning they would be stuck in waiting for processing, and
 
-    // Phase 2: Process payloads currently traveling in this step
+    // Phase 1: Process payloads currently traveling in this step
     processPayloadTraversal();
+
+    // Phase 2: Check Operators flagged in the previous step and call processData
+    processOperatorChecks(); // tricky state, meaning potential payloads could be waiting to be made, order important
 
     // Optionally, add logic here for checking simulation termination conditions.
 }
@@ -185,11 +189,20 @@ long long TimeController::getCurrentStep() const
  * @brief Gets the number of payloads currently active in this time step.
  * @return size_t The number of payloads in the `currentStepPayloads` vector.
  */
-size_t TimeController::getActivePayloadCount() const
+size_t TimeController::getCurrentStepPayloadCount() const
 {
     return currentStepPayloads.size();
 }
 
+
+/**
+ * @brief Gets the number of payloads for next time step.
+ * @return size_t The number of payloads in the `nextStepPayloads` vector.
+ */
+size_t TimeController::getNextStepPayloadCount() const
+{
+    return nextStepPayloads.size();
+}
 
 // --- Private Helper Methods ---
 
@@ -246,6 +259,11 @@ void TimeController::processPayloadTraversal()
         std::cout << "(After change) Current is empty: Step  " + currentStep << std::endl; 
     }
     // will still contain payloads for the next timeStep, if the payload not set to false
+}
+
+
+bool TimeController::hasPayloads() const {
+    return currentStepPayloads.size() > 0 || nextStepPayloads.size() > 0 || operatorsToProcess.size() > 0; 
 }
 
 // --- Load State Persistence Helper Implementations ---
@@ -507,7 +525,8 @@ void TimeController::saveOperatorsToProcess(std::ostream& out) const {
 /**
  * @brief Prints the current list of payloads (currentStepPayloads) in JSON array format.
  */
-void TimeController::printCurrentPayloads(std::ostream& out /* = std::cout */, bool pretty /* = false */) const {
+std::string TimeController::getCurrentPayloadsJson( bool pretty /* = false */) const {
+    std::ostringstream out; 
     // Purpose: Output current payloads as a JSON array.
     // Parameters: output stream, pretty flag.
     // Return: void.
@@ -531,4 +550,37 @@ void TimeController::printCurrentPayloads(std::ostream& out /* = std::cout */, b
     }
 
     out << maybeNewline << "]" << std::endl; // End array (add final newline for clarity)
+    return out.str();
+}
+
+
+/**
+ * @brief Prints the next list of payloads (nextStepPayloads) in JSON array format.
+ */
+std::string TimeController::getNextPayloadsJson(bool pretty /* = false */) const {
+    std::ostringstream out; 
+    // Purpose: Output current payloads as a JSON array.
+    // Parameters: output stream, pretty flag.
+    // Return: void.
+    // Key Logic: Iterate currentStepPayloads, call payload.toJsonString for each, format as JSON array.
+
+    // Define indentation helpers
+    std::string indentStep = pretty ? "  " : ""; // 2 spaces for inner levels
+    std::string maybeNewline = pretty ? "\n" : "";
+    std::string maybeSpace = pretty ? " " : "";
+
+    out << "[" << maybeNewline; // Start array
+
+    bool firstElement = true;
+    for (const Payload& payload : this->nextStepPayloads) {
+        if (!firstElement) {
+            out << "," << maybeNewline; // Comma before subsequent elements
+        }
+        // Call Payload's toJsonString, passing pretty flag and indentLevel 1
+        out << payload.toJsonString(pretty, (pretty ? 1 : 0));
+        firstElement = false;
+    }
+
+    out << maybeNewline << "]" << std::endl; // End array (add final newline for clarity)
+    return out.str();
 }

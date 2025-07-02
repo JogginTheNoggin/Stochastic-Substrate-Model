@@ -167,6 +167,10 @@ void CLI::processCommand(const std::string& line) {
         status.print(); // Use the print method from the struct
     } else if (command == "print-network") {
         std::cout << sim->getNetworkJson(true) << std::endl;
+    } else if (command == "print-current-payloads") {
+        std::cout << sim->getCurrentPayloadsJson(true) << std::endl;
+    } else if (command == "print-next-payloads") {
+        std::cout << sim->getNextPayloadsJson(true) << std::endl;
     } else if (command == "log-frequency") {
         int frequency;
         if (!(ss >> frequency) || frequency <= 0) {
@@ -189,6 +193,8 @@ void CLI::processCommand(const std::string& line) {
               << "  get-output              - Retrieve and print text from the output layer.\n"
               << "  status                  - Display the current status of the simulation.\n"
               << "  print-network           - Display the entire network structure as JSON.\n"
+              << "  print-current-payloads  - Display payloads for current time step.\n"
+              << "  print-next-payloads     - Display payloads for next time step.\n"
               << "  log-frequency <steps>   - Set how often status is logged during a run.\n"
               << "  quit / exit             - Exit the application.\n"
               << std::endl;

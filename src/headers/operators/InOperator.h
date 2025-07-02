@@ -10,8 +10,8 @@ private:
 
 public:
     static constexpr Operator::Type OP_TYPE = Operator::Type::IN;
-    static constexpr int MAX_CONNECTIONS = 5;
-    static constexpr int MAX_DISTANCE = 10; 
+    static constexpr int MAX_CONNECTIONS = 2;
+    static constexpr int MAX_DISTANCE = 2; 
 
 
     InOperator(uint32_t id) ;
