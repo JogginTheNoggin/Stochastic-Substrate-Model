@@ -202,6 +202,13 @@ public:
      */
     virtual std::string getOutput();
 
+
+    virtual int getTextCount();
+
+    virtual void clearTextOutput();
+
+    virtual void setTextBatchSize(int size);
+
     /**
      * @brief Gets a snapshot of the current status of the simulation.
      * @return A SimulationStatus struct containing key metrics.

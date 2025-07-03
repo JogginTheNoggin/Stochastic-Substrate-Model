@@ -162,6 +162,9 @@ void CLI::processCommand(const std::string& line) {
     } else if (command == "get-output") {
         std::string output = sim->getOutput();
         std::cout << "Output: " << output << std::endl;
+    } else if (command == "get-text-count"){
+        int count = sim->getTextCount();
+        std::cout << "Text Count: " << count << std::endl;
     } else if (command == "status") {
         SimulationStatus status = sim->getStatus();
         status.print(); // Use the print method from the struct
@@ -171,6 +174,14 @@ void CLI::processCommand(const std::string& line) {
         std::cout << sim->getCurrentPayloadsJson(true) << std::endl;
     } else if (command == "print-next-payloads") {
         std::cout << sim->getNextPayloadsJson(true) << std::endl;
+    } else if (command == "set-batch-size"){
+        int size;
+        if (!(ss >> size)) {
+            std::cout << "Error: Please provide a valid batch size." << std::endl;
+        } else {
+            sim->setTextBatchSize(size);
+            std::cout << "Batch size set to " << size << " ." << std::endl;
+        }
     } else if (command == "log-frequency") {
         int frequency;
         if (!(ss >> frequency) || frequency <= 0) {
@@ -179,8 +190,10 @@ void CLI::processCommand(const std::string& line) {
             sim->setLogFrequency(frequency);
             std::cout << "Log frequency set to every " << frequency << " steps." << std::endl;
         }
-    }
-    else if (command == "help") {
+    } else if (command == "clear-text-output"){
+        sim->clearTextOutput();
+        std::cout << "Output has been cleared" << std::endl; 
+    } else if (command == "help") {
          std::cout << "Available Commands:\n"
               << "  load-config <path>      - Load network structure from a file.\n"
               << "  save-config <path>      - Save network structure to a file.\n"
@@ -191,11 +204,14 @@ void CLI::processCommand(const std::string& line) {
               << "  pause / stop            - Request the running simulation to stop.\n"
               << "  submit-text <text>      - Submit text to the input layer.\n"
               << "  get-output              - Retrieve and print text from the output layer.\n"
+              << "  get-text-count          - Display the current amount of text output.\n"
               << "  status                  - Display the current status of the simulation.\n"
               << "  print-network           - Display the entire network structure as JSON.\n"
               << "  print-current-payloads  - Display payloads for current time step.\n"
               << "  print-next-payloads     - Display payloads for next time step.\n"
+              << "  set-batch-size          - Set how many characters to return each call to get-ouput\n"
               << "  log-frequency <steps>   - Set how often status is logged during a run.\n"
+              << "  clear-text-output            - Removes all output data currently stored\n"
               << "  quit / exit             - Exit the application.\n"
               << std::endl;
     } else {

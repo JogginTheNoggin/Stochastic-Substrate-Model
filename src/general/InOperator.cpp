@@ -27,7 +27,7 @@ void InOperator::randomInit(IdRange* idRange, Randomizer* rng){
         return; // Not enough potential targets or no connections allowed
     }
 
-    int connectionsToAttempt = rng->getInt(0, MAX_CONNECTIONS);
+    int connectionsToAttempt = rng->getInt(0, MAX_CONNECTIONS - 1);
 
     if (connectionsToAttempt == 0) {
         return;
@@ -39,7 +39,7 @@ void InOperator::randomInit(IdRange* idRange, Randomizer* rng){
         // self-connection 
         
 
-        int distance = rng->getInt(0, MAX_DISTANCE);
+        int distance = rng->getInt(0, MAX_DISTANCE - 1);
         // Ensure distance is non-negative (should be by uniform_int_distribution if MAX_DISTANCE >= 0)
         if (distance < 0) distance = 0;
 

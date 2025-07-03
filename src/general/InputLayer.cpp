@@ -143,6 +143,7 @@ void InputLayer::inputText(std::string text){
     uint32_t textChannelId = reservedRange->getMinId() + textChannelIdOffset; 
     for (char c : text) {
         // schedule each, which will then flag the operator for processing
+        // TODO magnify the char? Yes or no. NO, input Op just needs more connections or get lucky with ADD ops with low thresholds
         Scheduler::get()->scheduleMessage(textChannelId, static_cast<int>(c));
         //NOT correct:  operators.at(textChannelId)->message(static_cast<int>(c)); // no need to cast
     }

@@ -27,6 +27,7 @@
 #include <cstddef>      // std::size_t
 #include <stdexcept>    // std::overflow_error, std::out_of_range
 #include <cstdint>      // std::int16_t 
+#include "Constants.h"
 /**
  * @tparam T         element type
  * @tparam MAX_SIZE  compile-time capacity (≤ 65 535 by default)
@@ -42,9 +43,9 @@
  *
  */
 template <typename T>
-class DynamicArray { // TODO check DynamicArray Memory leaks
+class DynamicArray { // TODO check DynamicArray Memory leaks, not going to be dynamic for now (static network)
 public:
-    static constexpr std::int16_t MAX_SIZE = 10000;
+    static constexpr std::int16_t MAX_SIZE = 2 << Constants::NETWORK_SIZE;
 
     using value_type = T;
     using size_type  = std::int16_t;        // matches MAX_SIZE’s range

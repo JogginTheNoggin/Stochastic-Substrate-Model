@@ -72,7 +72,7 @@ void AddOperator::randomInit(uint32_t maxOperatorId, Randomizer* rng) {
         return; // Not enough potential targets or no connections allowed
     }
 
-    int connectionsToAttempt = rng->getInt(0, AddOperator::MAX_CONNECTIONS);
+    int connectionsToAttempt = rng->getInt(0, AddOperator::MAX_CONNECTIONS - 1); // TODO potential off by one issur
 
     if (connectionsToAttempt == 0) {
         return;
@@ -93,7 +93,7 @@ void AddOperator::randomInit(uint32_t maxOperatorId, Randomizer* rng) {
             continue; // Can only connect to self, so skip
         }
 
-        int distance = rng->getInt(0, AddOperator::MAX_DISTANCE);
+        int distance = rng->getInt(0, AddOperator::MAX_DISTANCE - 1);
         // Ensure distance is non-negative (should be by uniform_int_distribution if MAX_DISTANCE >= 0)
         if (distance < 0) distance = 0;
 
@@ -114,7 +114,7 @@ void AddOperator::randomInit(IdRange* idRange, Randomizer* rng){
         return; // Not enough potential targets or no connections allowed
     }
 
-    int connectionsToAttempt = rng->getInt(0, AddOperator::MAX_CONNECTIONS);
+    int connectionsToAttempt = rng->getInt(0, AddOperator::MAX_CONNECTIONS - 1);
 
     if (connectionsToAttempt == 0) {
         return;
@@ -126,7 +126,7 @@ void AddOperator::randomInit(IdRange* idRange, Randomizer* rng){
         // self-connection 
         
 
-        int distance = rng->getInt(0, AddOperator::MAX_DISTANCE);
+        int distance = rng->getInt(0, AddOperator::MAX_DISTANCE - 1);
         // Ensure distance is non-negative (should be by uniform_int_distribution if MAX_DISTANCE >= 0)
         if (distance < 0) distance = 0;
 

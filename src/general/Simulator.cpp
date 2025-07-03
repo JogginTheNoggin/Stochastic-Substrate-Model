@@ -342,6 +342,21 @@ std::string Simulator::getOutput() {
     return metaController.getOutput();;
 }
 
+int Simulator::getTextCount() {
+    std::lock_guard<std::mutex> lock(simMutex);
+    return metaController.getTextCount();;
+}
+
+void Simulator::clearTextOutput(){
+    std::lock_guard<std::mutex> lock(simMutex);
+    metaController.clearTextOutput();
+}
+
+void Simulator::setTextBatchSize(int size){
+    std::lock_guard<std::mutex> lock(simMutex);
+    metaController.setTextBatchSize(size);
+}
+
 SimulationStatus Simulator::getStatus() const {
     // Purpose: To get a snapshot of the simulation's current status.
     // Parameters: None.

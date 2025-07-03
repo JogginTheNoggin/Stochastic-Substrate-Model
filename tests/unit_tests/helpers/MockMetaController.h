@@ -160,7 +160,7 @@ public:
         lastCall = LastCall::TRAVERSE_PAYLOAD;
     }
     
-    std::string getOutput() const override{
+    std::string getOutput() override{
         // can't adjust values because const. 
         // callCount++;
         // lastCall = LastCall::GET_OUTPUT;
@@ -363,7 +363,7 @@ public:
     }
 
    
-    std::string baseGetOutput() const{
+    std::string baseGetOutput() {
         return MetaController::getOutput();
     }
 

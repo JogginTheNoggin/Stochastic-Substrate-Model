@@ -2,6 +2,7 @@
 #include "../headers/operators/OutOperator.h"
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 // TODO better comments
 
@@ -19,7 +20,7 @@ OutOperator::OutOperator(const std::byte*& current, const std::byte* end): Opera
     uint16_t dataCount = Serializer::read_uint16(current, end);
 
     // Reserve space and read each element
-    this->data.reserve(dataCount);
+    // this->data.reserve(dataCount);
     for (uint16_t i = 0; i < dataCount; ++i) {
         this->data.push_back(Serializer::read_int(current, end));
     }
@@ -53,6 +54,11 @@ void OutOperator::changeParams(const std::vector<int>& params) {
 
 void OutOperator::message(const int payloadData){
     // std::cout << " Output recieved. " << std::endl; // TODO temporary for testing
+    if (data.size() >= MAX_DATA_BUFFER_SIZE) {
+        // Remove the oldest element from the front of the vector.
+        data.pop_front();
+    }
+
     data.push_back(payloadData); 
 }
 
@@ -126,6 +132,23 @@ bool OutOperator::hasOutput(){
     return data.size() > 0; 
 }
 
+int OutOperator::getOutputCount(){
+    return data.size();
+}
+
+void OutOperator::setBatchSize(int size){
+    if(size < 0){
+        return;
+    }
+    output_batch_size = size;
+}
+
+
+void OutOperator::clearData(){
+    data.clear();
+}
+
+
 /**
  * @brief Converts the stored integer data into an ASCII string and clears the internal buffer.
  * @return std::string A string where each character is derived from an integer in the data buffer.
@@ -140,6 +163,8 @@ std::string OutOperator::getDataAsString() {
     if (data.empty()) {
         return "";
     }
+
+     size_t items_to_process = std::min(data.size(), output_batch_size);
 
     // Pre-allocate memory for the output string to avoid reallocations. This is more efficient.
     std::string out;
@@ -168,7 +193,7 @@ std::string OutOperator::getDataAsString() {
             // This case handles systems where int is 8 bits or less. Simply truncate.
             ch = static_cast<char>(non_negative_value & 0xFF); // truncate bottom 8 bits
         }
-        std::cout << "char: " << ch << std::endl;
+        // std::cout << "char: " << ch << std::endl;
         out.push_back(ch);
     }
 
@@ -281,14 +306,12 @@ std::vector<std::byte> OutOperator::serializeToBytes() const{
 
     // 2. Append this derived class's specific data to the buffer.
     // First, write the count of elements in the data vector.
-    if (data.size() > std::numeric_limits<uint16_t>::max()) {
-        throw std::overflow_error("OutOperator data vector size exceeds uint16_t limit.");
-    }
-    Serializer::write(dataBuffer, static_cast<uint16_t>(data.size()));
+    int size = data.size() > std::numeric_limits<uint16_t>::max()? std::numeric_limits<uint16_t>::max(): data.size(); // prevent overflow
+    Serializer::write(dataBuffer, static_cast<uint16_t>(size));
 
-    // Then, write each element.
-    for (int val : data) {
-        Serializer::write(dataBuffer, val);
+    auto it = data.rbegin(); 
+    for(int i = 0; i < size && it != data.rend(); ++i, ++it) {
+        Serializer::write(dataBuffer, *it);
     }
 
     // 3. Prepare the final buffer by prepending the calculated size.

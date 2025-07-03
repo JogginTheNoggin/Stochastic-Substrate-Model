@@ -7,6 +7,7 @@
 // Forward Declarations
 class Operator;
 class Layer;      // The abstract base class for layers
+class OutputLayer; 
 class Payload;
 class Randomizer; 
 struct UpdateEvent;
@@ -152,6 +153,8 @@ public:
 
     Layer* findLayerForOperator(uint32_t operatorId) const;
 
+    OutputLayer* getOutputLayer();
+
     /**
      * @return, true if the layer with operator exist and message has been sent, false otherwise
      */
@@ -252,9 +255,15 @@ public:
     virtual void printOperators(bool prettyPrint = true) const;
 
     // ----- Input & Output for network ----
-    virtual std::string getOutput() const;
+    virtual std::string getOutput();
+
+    virtual int getTextCount();
 
     virtual bool inputText(std::string input); 
+
+    virtual void clearTextOutput();
+
+    virtual void setTextBatchSize(int size);
 
     virtual bool isEmpty() const;
 

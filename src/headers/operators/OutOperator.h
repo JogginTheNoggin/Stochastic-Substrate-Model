@@ -1,17 +1,19 @@
 #pragma once
 
 #include "Operator.h"
-#include <vector>
+#include <deque> 
 
 // TODO better comments
 class OutOperator: public Operator{
 
 private: 
-    std::vector<int> data; 
+    std::deque<int> data; 
 
 public:
     static constexpr Operator::Type OP_TYPE = Operator::Type::OUT;
-
+    static constexpr size_t MAX_DATA_BUFFER_SIZE = 8192000;
+    size_t output_batch_size = 512; // batch size for operator 
+    // TODO batch size may not be relevant for say image channel
 
     OutOperator(uint32_t id) ;
 
@@ -37,6 +39,8 @@ public:
     bool hasOutput();  // possible to make this base class virtual method, which would just checks accumulated data if it exist.  
 
     
+    int getOutputCount();
+
     /**
      * @brief Processes accumulated data from the PREVIOUS step and potentially fires.
      * @details Called by TimeController during the "Check Operator" phase (Phase 1 of Step N+2).
@@ -83,5 +87,9 @@ public:
      * After generating the string, the internal data buffer is cleared.
      */
     std::string getDataAsString();
+
+    void clearData();
+
+    void setBatchSize(int size);
 
 };

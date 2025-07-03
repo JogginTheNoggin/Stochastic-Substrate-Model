@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Operator.h"
+#include "util/Constants.h"
 #include <vector>
 
 // TODO better comments
@@ -10,8 +11,8 @@ private:
 
 public:
     static constexpr Operator::Type OP_TYPE = Operator::Type::IN;
-    static constexpr int MAX_CONNECTIONS = 2;
-    static constexpr int MAX_DISTANCE = 2; 
+    static constexpr int MAX_CONNECTIONS = 2 << Constants::NETWORK_SIZE;
+    static constexpr int MAX_DISTANCE = 2 << Constants::NETWORK_SIZE; 
 
 
     InOperator(uint32_t id) ;

@@ -6,6 +6,7 @@
 #include <string>
 #include <cstddef>   // For std::byte
 #include <sstream>   // For std::ostringstream
+#include "util/Constants.h"
 
 // Forward declaration if needed
 class Serializer;
@@ -36,10 +37,10 @@ class Serializer;
  */
 class AddOperator : public Operator {
 private:
-    static constexpr int MAX_CONNECTIONS = 2;
-    static constexpr int MAX_DISTANCE = 2; 
+    static constexpr int MAX_CONNECTIONS = 2 << Constants::NETWORK_SIZE;
+    static constexpr int MAX_DISTANCE = 2 << Constants::NETWORK_SIZE; 
     static constexpr int MIN_THRESHOLD = 0;
-    static constexpr int MAX_THRESHOLD = 1;
+    static constexpr int MAX_THRESHOLD = 32; // TODO issue, inOperators will only pass
     static constexpr int MIN_WEIGHT = -2056;
     static constexpr int MAX_WEIGHT = 2056; 
     int weight;

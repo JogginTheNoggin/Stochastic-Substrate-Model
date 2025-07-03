@@ -60,6 +60,13 @@ public:
      */
     bool hasTextOutput();
 
+    
+    int getTextCount(); 
+
+    void setTextBatchSize(int size);
+
+    void clearTextOutput();
+
     std::string getTextOutput(); 
     /**
      * @brief Implements the random initialization logic specific to an Internal Layer.

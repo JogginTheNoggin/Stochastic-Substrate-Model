@@ -345,6 +345,16 @@ Layer* MetaController::getDynamicLayer(){
     return layers.back().get();
 }
 
+
+OutputLayer* MetaController::getOutputLayer(){
+    for (const auto& layerPtr : layers) { // TODO not efficient but good enough with only 3 layers
+        if (auto* outputLayer = dynamic_cast<OutputLayer*>(layerPtr.get())) {
+            return outputLayer;
+        }
+    }
+    return nullptr;
+}
+
 // operator processing
 
 bool MetaController::messageOp(uint32_t operatorId, int message) {
@@ -457,15 +467,38 @@ void MetaController::handleMoveConnection(uint32_t targetOperatorId, const std::
     }
 }
 
-// input and output
-std::string MetaController::getOutput() const{
-    for (const auto& layerPtr : layers) { // TODO not efficient but good enough with only 3 layers
-        if (auto* outputLayer = dynamic_cast<OutputLayer*>(layerPtr.get())) {
-            return outputLayer->hasTextOutput()? outputLayer->getTextOutput() : "[ No New Output Text. ]";
-        }
+int MetaController::getTextCount(){
+    OutputLayer* outputLayer = getOutputLayer();
+    if(outputLayer == nullptr){
+        return 0; 
     }
+    return outputLayer->hasTextOutput()? outputLayer->getTextCount(): 0;
+}
 
-    return "[ No New Output Text. ]";
+
+void MetaController::clearTextOutput(){
+    OutputLayer* outputLayer = getOutputLayer();
+    if(outputLayer == nullptr){
+        return; 
+    }
+    outputLayer->clearTextOutput();
+}
+
+// input and output
+std::string MetaController::getOutput() {
+    OutputLayer* outputLayer = getOutputLayer();
+    if(outputLayer == nullptr){
+        return "[ No Output Layer. ]"; 
+    }
+    return outputLayer->hasTextOutput()? outputLayer->getTextOutput() : "[ No New Output Text. ]";
+}
+
+void MetaController::setTextBatchSize(int size){
+    OutputLayer* outputLayer = getOutputLayer();
+    if(outputLayer == nullptr){
+        return; 
+    }
+    outputLayer->setTextBatchSize(size);
 }
 
 

@@ -86,6 +86,29 @@ std::string OutputLayer::getTextOutput(){
 }
 
 
+int OutputLayer::getTextCount(){
+
+    uint32_t textChannelId = reservedRange->getMinId() + textChannelIdOffset;
+
+
+    return (static_cast<OutOperator*>(operators.at(textChannelId)))->getOutputCount();
+}
+
+
+void OutputLayer::setTextBatchSize(int size){
+    uint32_t textChannelId = reservedRange->getMinId() + textChannelIdOffset;
+
+    return (static_cast<OutOperator*>(operators.at(textChannelId)))->setBatchSize(size);
+}
+
+void OutputLayer::clearTextOutput(){
+    uint32_t textChannelId = reservedRange->getMinId() + textChannelIdOffset;
+
+
+    return (static_cast<OutOperator*>(operators.at(textChannelId)))->clearData();
+}
+
+
 
 
 
